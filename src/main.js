@@ -859,6 +859,70 @@ document.getElementById("player-mode").addEventListener("change", async () => {
   if (barActive) await invoke("bar_set_mode", { mode: document.getElementById("player-mode").value });
 });
 showModeDesc();
+// システム音声のアップサンプリング(ループバック橋渡し、Windows)
+const bridgeCapture = document.getElementById("bridge-capture");
+const bridgeOutput = document.getElementById("bridge-output");
+const bridgeStartBtn = document.getElementById("bridge-start-btn");
+const bridgeStopBtn = document.getElementById("bridge-stop-btn");
+const bridgeStatusEl = document.getElementById("bridge-status");
+let bridgeTimer = null;
+async function loadBridgeDevices() {
+  try {
+    const devs = await invoke("bridge_devices"); // [[名前, 既定か], ...]
+    bridgeCapture.innerHTML = "";
+    bridgeOutput.innerHTML = "";
+    for (const [name, isDef] of devs) {
+      bridgeCapture.add(new Option(name + (isDef ? " (既定/default)" : ""), name));
+      bridgeOutput.add(new Option(name + (isDef ? " (既定/default)" : ""), name));
+    }
+    // 既定の候補: 送り先=既定の出力以外を避けて最初のものではなく「既定」、受け取り=既定ではない最初のもの
+    const def = devs.find((d) => d[1]);
+    const other = devs.find((d) => !d[1]);
+    if (def) bridgeOutput.value = def[0];
+    if (other) bridgeCapture.value = other[0];
+  } catch (e) {
+    bridgeStatusEl.textContent = String(e);
+    bridgeStartBtn.disabled = true;
+  }
+}
+function showBridge(st) {
+  if (!st) return;
+  bridgeStatusEl.textContent = `${st.running ? "動作中 / Running" : "停止 / Stopped"}: ${st.capture_device} → ${st.output_device} — ` +
+    `${st.in_rate_hz / 1000} kHz → ${st.out_rate_hz / 1000} kHz / ${st.out_bits}bit(コンテナ${st.container_bits}bit) — ` +
+    `バッファ ${st.buffer_secs.toFixed(2)} 秒 / 音切れ ${st.underrun_frames} / 入力レベル ${(st.in_peak * 100).toFixed(0)}%` +
+    (st.in_peak === 0 ? " — 音が届いていません(再生していない、またはDRMで無音) / no audio arriving (nothing playing, or DRM-silenced)" : "") +
+    (st.message ? ` — ${st.message}` : "");
+}
+function pollBridge() {
+  clearInterval(bridgeTimer);
+  bridgeTimer = setInterval(async () => {
+    const st = await invoke("bridge_status").catch(() => null);
+    if (!st) { clearInterval(bridgeTimer); bridgeStartBtn.disabled = false; bridgeStopBtn.disabled = true; return; }
+    showBridge(st);
+    if (!st.running) { clearInterval(bridgeTimer); bridgeStartBtn.disabled = false; bridgeStopBtn.disabled = true; }
+  }, 500);
+}
+bridgeStartBtn.addEventListener("click", async () => {
+  bridgeStartBtn.disabled = true;
+  try {
+    const st = await invoke("bridge_start", { capture: bridgeCapture.value, output: bridgeOutput.value, maxRate: Number(document.getElementById("bridge-maxrate").value), bits: Number(document.getElementById("bridge-bits").value) });
+    showBridge(st);
+    bridgeStopBtn.disabled = false;
+    pollBridge();
+  } catch (e) {
+    bridgeStatusEl.textContent = `開始できません / Cannot start: ${e}`;
+    bridgeStartBtn.disabled = false;
+  }
+});
+bridgeStopBtn.addEventListener("click", async () => {
+  await invoke("bridge_stop").catch(() => {});
+  clearInterval(bridgeTimer);
+  bridgeStatusEl.textContent = "停止しました / Stopped";
+  bridgeStartBtn.disabled = false;
+  bridgeStopBtn.disabled = true;
+});
+document.getElementById("bridge-refresh-btn").addEventListener("click", loadBridgeDevices);
+loadBridgeDevices();
 playerMedia.style.display = "none";
 playerMedia.addEventListener("pause", updateButtons);
 playerMedia.addEventListener("play", updateButtons);

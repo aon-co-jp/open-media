@@ -404,6 +404,37 @@ fn bar_auto_pair(_folder: String) -> Vec<serde_json::Value> { vec![] }
 #[tauri::command]
 fn bar_save_combo(_video: String, _audio: String, _audio_offset_ms: i64, _out_path: String) -> Result<(), String> { Err(BAR_NA.into()) }
 
+/// システム音声のアップサンプリング(ループバック橋渡し、Windowsのみ)。
+#[cfg(windows)]
+#[tauri::command]
+fn bridge_devices() -> Result<Vec<(String, bool)>, String> { engine::bridge::devices() }
+#[cfg(windows)]
+#[tauri::command]
+async fn bridge_start(capture: String, output: String, max_rate: u32, bits: u16) -> Result<open_bar::loopback::BridgeStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || engine::bridge::start(&capture, &output, max_rate, bits)).await.map_err(|e| e.to_string())?
+}
+#[cfg(windows)]
+#[tauri::command]
+fn bridge_stop() { engine::bridge::stop() }
+#[cfg(windows)]
+#[tauri::command]
+fn bridge_status() -> Option<open_bar::loopback::BridgeStatus> { engine::bridge::status() }
+
+#[cfg(not(windows))]
+const BRIDGE_NA: &str = "システム音声の橋渡しは現在Windowsのみ対応です(Linuxは同梱のPipeWire設定を使います) / System-audio bridging is Windows-only for now (Linux: use the bundled PipeWire config)";
+#[cfg(not(windows))]
+#[tauri::command]
+fn bridge_devices() -> Result<Vec<(String, bool)>, String> { Err(BRIDGE_NA.into()) }
+#[cfg(not(windows))]
+#[tauri::command]
+fn bridge_start(_capture: String, _output: String, _max_rate: u32, _bits: u16) -> Result<serde_json::Value, String> { Err(BRIDGE_NA.into()) }
+#[cfg(not(windows))]
+#[tauri::command]
+fn bridge_stop() {}
+#[cfg(not(windows))]
+#[tauri::command]
+fn bridge_status() -> Option<serde_json::Value> { None }
+
 /// 書き込み非対応のDVD-ROM等も含む全光学ドライブ。
 #[tauri::command]
 fn list_optical_drives() -> Result<Vec<String>, String> {
@@ -509,6 +540,10 @@ pub fn run() {
             upsample_for_playback,
             ai_playback_rate,
             list_optical_drives,
+            bridge_devices,
+            bridge_start,
+            bridge_stop,
+            bridge_status,
             bar_modes,
             bar_play,
             bar_pause,

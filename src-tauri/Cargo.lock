@@ -3247,7 +3247,7 @@ dependencies = [
 [[package]]
 name = "open-bar"
 version = "0.1.0"
-source = "git+https://github.com/aon-co-jp/open-bar?rev=ef8235b#ef8235b0d586b1ef270037ca9890b910633c73fd"
+source = "git+https://github.com/aon-co-jp/open-bar?rev=f6163cb#f6163cb6d78236b2e28026327c8bfb892669829c"
 dependencies = [
  "cpal",
  "open-audio-sr",
@@ -3270,7 +3270,7 @@ source = "git+https://github.com/aon-co-jp/open-cpu#b2319a069c54d66499830cedcc37
 
 [[package]]
 name = "open-media"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "image",
  "lopdf",

@@ -71,6 +71,24 @@
       </section>
 
       <section>
+        <h2>0.5. システム音声のアップサンプリング(YouTube・ブラウザ・音楽アプリ) / System-audio upsampling (YouTube, browsers, music apps)</h2>
+        <p class="hint">Windowsが出している音を受け取り、高品質のsincアップサンプル(352.8/384 kHzまで)と32bitで、別のDACへ排他モードで送り直します。<b>使い方:</b> (1) Windowsの「サウンド」で、<b>既定の出力をDACではない出力</b>(例: HDMIモニターの音声)にする。 (2) 下で「受け取る出力」にそれを、「送り先のDAC」に本物のDACを選んで開始。 / Takes the sound Windows is playing and re-sends it to a separate DAC in exclusive mode with high-quality sinc upsampling (up to 352.8/384 kHz) and 32-bit. <b>How:</b> (1) In Windows Sound settings make a <b>non-DAC output the default</b> (e.g. HDMI monitor audio). (2) Pick it below as the capture output, pick the real DAC as the destination, and start.</p>
+        <div class="row">
+          <label>受け取る出力 / Capture output: <select id="bridge-capture"></select></label>
+          <label>送り先のDAC / Destination DAC: <select id="bridge-output"></select></label>
+          <button id="bridge-refresh-btn">デバイスを再読込 / Reload devices</button>
+        </div>
+        <div class="row">
+          <label>出力ビット / Bits: <select id="bridge-bits"><option value="32" selected>32bit</option><option value="24">24bit</option></select></label>
+          <label>出力レートの上限 / Max rate: <select id="bridge-maxrate"><option value="0" selected>制限なし(最大384 kHz) / no limit (up to 384 kHz)</option><option value="192000">192 kHz</option><option value="96000">96 kHz</option></select></label>
+          <button id="bridge-start-btn" class="primary">開始 / Start</button>
+          <button id="bridge-stop-btn" disabled>停止 / Stop</button>
+        </div>
+        <p id="bridge-status" class="hint"></p>
+        <p class="hint">注意: 約0.3秒の遅延があるため、音楽向けです(動画では映像と音がずれます)。DRMで保護された音声(Netflix・U-NEXT・Prime Videoの映像など)は、受け取れず無音になることがあります。保護を外す処理は行いません。受け取る音はWindowsのミキサーの形式(多くは48 kHz)なので、元の音源より高い情報は増えません。高くなるのは出力のレートと精度です。 / Note: about 0.3 s of latency, so use it for music (video would drift out of sync). DRM-protected audio (e.g. Netflix, U-NEXT, Prime Video) may arrive silent; nothing is done to strip protection. The captured sound is in the Windows mixer format (often 48 kHz), so no information beyond the source is added; what improves is the output rate and precision.</p>
+      </section>
+
+      <section>
         <h2>1. ソースファイル</h2>
         <button id="add-files-btn">ファイルを追加...</button>
         <ul id="file-list"></ul>

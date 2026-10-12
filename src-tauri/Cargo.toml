@@ -53,7 +53,7 @@ tauri-plugin-process = "2"
 # デスクトップのみ(cpal/WASAPIはAndroid/iOS非対応のためモバイルでは映像と同じWebView再生へ縮退)。
 # ディスクプレーヤーの音声側エンジン(2026-10-12取り込み): ビットパーフェクト/排他モード/DoP/高品質アップサンプル。
 # 映像(DVD/Blu-ray)はWebViewのまま、音声(CD・音声ファイル・DSD)はopen-barで再生するハイブリッド構成。
-open-bar = { git = "https://github.com/aon-co-jp/open-bar", rev = "96cd7dc" }
+open-bar = { git = "https://github.com/aon-co-jp/open-bar", rev = "f6163cb" }
 
 [target.'cfg(windows)'.dependencies]
 # AIアップミックス(HT-Demucs、2026-09-28新設)のGPU高速化。DirectML経由でAMD/NVIDIA/Intelを
