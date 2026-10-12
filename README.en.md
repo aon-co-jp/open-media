@@ -14,10 +14,10 @@ Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
 
 | Platform | File |
 |---|---|
-| Windows | `open-media_0.1.0_x64-setup.exe` / `.msi` |
-| macOS (Apple Silicon / Intel) | `open-media_0.1.0_aarch64.dmg` / `open-media_0.1.0_x64.dmg` |
+| Windows | `open-media_0.1.1_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.1_aarch64.dmg` / `open-media_0.1.1_x64.dmg` |
 | Linux | `.deb` / `.rpm` / `.AppImage` |
-| Android (phones and tablets) | `open-media_0.1.0_android-universal.apk` (unsigned, sideload) |
+| Android (phones and tablets) | `open-media_0.1.1_android-universal.apk` (unsigned, sideload) |
 
 ## Features
 
