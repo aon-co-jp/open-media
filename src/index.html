@@ -14,12 +14,15 @@
       <section>
         <h2>0. ディスクプレーヤー / Disc player</h2>
         <p class="hint">音楽CDのトラックを選んで再生できます。DVD・Blu-ray・データディスク内の音声/動画ファイルも選んで再生できます。 / Select and play audio CD tracks, or pick an audio/video file on a DVD / Blu-ray / data disc.</p>
-        <div class="row">
+        <div class="row disc-only">
           <select id="player-drive"></select>
           <button id="player-scan-btn">ディスクを読む / Read disc</button>
-          <button id="player-file-btn">ディスク内のファイルを選ぶ... / Pick a file on disc...</button>
         </div>
         <div class="row">
+          <button id="player-file-btn">ディスク内のファイルを選ぶ... / Pick a file on disc...</button>
+          <input id="player-file-input" type="file" accept="audio/*,video/*" style="display:none" />
+        </div>
+        <div class="row engine-only">
           <label>再生モード(音声) / Audio mode:
             <select id="player-mode">
               <option value="shared">B 共有モード・高品質アップサンプル / B Shared · HQ upsample</option>
@@ -37,11 +40,11 @@
           <label><input type="checkbox" id="player-treble" /> 高音補正 / Treble restoration (MP3)</label>
           <label><input type="checkbox" id="player-treble-all" /> CD・ハイレゾにも掛ける(実験的) / Also apply to CD &amp; hi-res (experimental)</label>
         </div>
-        <p id="player-mode-desc" class="hint"></p>
-        <p class="hint">高音補正は、元の音に無い高域を足す処理です(復元ではなく「もっともらしい音」の生成)。既定ではMP3などの非可逆音源だけに掛けます。「CD・ハイレゾにも掛ける」を選ぶと全ての音源に掛かります。AI版(open-audio-sr)は出力が48kHzなので、48kHz以下の音源(CD等)だけに使い、それより高いレートの音源はレートを下げないようリアルタイムEQにします。 / Treble restoration adds high frequencies that were not in the source (plausible generation, not recovery). By default it applies only to lossy sources such as MP3; the "also CD &amp; hi-res" option applies it to every source. The AI version (open-audio-sr) outputs 48 kHz, so it is used only for sources at 48 kHz or below; higher-rate sources get the real-time EQ so their rate is never reduced.</p>
-        <p class="hint">32bitは、排他モードでDACへ渡す形式です。32bitを受け付けない機器は自動で24bitに落とします。内部処理は32bit浮動小数点(有効な仮数は24bit)のため、32bitにしても実際の分解能が24bitを超えるわけではなく、多くのDACも24bitまでです(変換回数を減らし余裕を持たせる効果)。 / 32-bit is the format sent to the DAC in exclusive mode; devices that reject it fall back to 24-bit. Internal processing is 32-bit float (24-bit mantissa), so real resolution does not exceed 24-bit and most DACs stop at 24-bit; the benefit is headroom and one fewer conversion stage.</p>
-        <p id="player-mqa" class="hint"></p>
-        <div class="row">
+        <p id="player-mode-desc" class="hint engine-only"></p>
+        <p class="hint engine-only">高音補正は、元の音に無い高域を足す処理です(復元ではなく「もっともらしい音」の生成)。既定ではMP3などの非可逆音源だけに掛けます。「CD・ハイレゾにも掛ける」を選ぶと全ての音源に掛かります。AI版(open-audio-sr)は出力が48kHzなので、48kHz以下の音源(CD等)だけに使い、それより高いレートの音源はレートを下げないようリアルタイムEQにします。 / Treble restoration adds high frequencies that were not in the source (plausible generation, not recovery). By default it applies only to lossy sources such as MP3; the "also CD &amp; hi-res" option applies it to every source. The AI version (open-audio-sr) outputs 48 kHz, so it is used only for sources at 48 kHz or below; higher-rate sources get the real-time EQ so their rate is never reduced.</p>
+        <p class="hint engine-only">32bitは、排他モードでDACへ渡す形式です。32bitを受け付けない機器は自動で24bitに落とします。内部処理は32bit浮動小数点(有効な仮数は24bit)のため、32bitにしても実際の分解能が24bitを超えるわけではなく、多くのDACも24bitまでです(変換回数を減らし余裕を持たせる効果)。 / 32-bit is the format sent to the DAC in exclusive mode; devices that reject it fall back to 24-bit. Internal processing is 32-bit float (24-bit mantissa), so real resolution does not exceed 24-bit and most DACs stop at 24-bit; the benefit is headroom and one fewer conversion stage.</p>
+        <p id="player-mqa" class="hint engine-only"></p>
+        <div class="row" id="vres-row">
           <label>映像のアップコンバート(DVD/MP4/MKV等) / Video upconvert:
             <select id="player-vres">
               <option value="1080" selected>Full HD(1080p)まで(既定) / up to Full HD (default)</option>
@@ -50,27 +53,27 @@
             </select>
           </label>
         </div>
-        <p class="hint">元の映像が目標より低いときだけ、高品質のlanczos補間で引き上げます(高い映像は縮めません)。補間であり、失われた細部を復元するAI超解像ではありません(AI超解像は「4.3」の変換機能で行えます)。音声は映像と別に取り出し、open-barエンジンでアップサンプリングしながら再生します。4Kは変換に時間がかかります。 / Only video below the target is enlarged, with a high-quality lanczos filter (larger video is never shrunk). This is interpolation, not AI super-resolution that restores detail (use section 4.3 for that). Audio is extracted separately and played through the open-bar engine with upsampling. 4K takes longer to convert.</p>
-        <div class="row">
+        <p class="hint" id="vres-hint">元の映像が目標より低いときだけ、高品質のlanczos補間で引き上げます(高い映像は縮めません)。補間であり、失われた細部を復元するAI超解像ではありません(AI超解像は「4.3」の変換機能で行えます)。音声は映像と別に取り出し、open-barエンジンでアップサンプリングしながら再生します。4Kは変換に時間がかかります。 / Only video below the target is enlarged, with a high-quality lanczos filter (larger video is never shrunk). This is interpolation, not AI super-resolution that restores detail (use section 4.3 for that). Audio is extracted separately and played through the open-bar engine with upsampling. 4K takes longer to convert.</p>
+        <div class="row engine-only">
           <button id="player-pause-btn" disabled>⏸ 一時停止 / Pause</button>
           <button id="player-stop-btn" disabled>■ 停止 / Stop</button>
           <input id="player-seek" type="range" min="0" max="0" step="0.1" value="0" disabled style="flex:1" />
           <span id="player-time">0:00 / 0:00</span>
           <label>音量 / Vol <input id="player-vol" type="range" min="0" max="1" step="0.01" value="1" /></label>
         </div>
-        <p id="player-route" class="hint"></p>
-        <p class="hint">音声(CD・音声ファイル・DSD)は<a href="https://github.com/aon-co-jp/open-bar">open-bar</a>エンジンで再生します(排他モードはWindows)。映像(DVD/Blu-ray/動画)はこの画面の映像プレーヤーで再生します。MQAは復号せず、判別のみ行います(MQA対応DACへはビットパーフェクトで素通しできるモードA/Dで再生)。 / Audio (CD, audio files, DSD) plays through the open-bar engine (exclusive modes: Windows). Video (DVD/Blu-ray/movies) plays in the on-screen video player. MQA is detected only, never decoded (use mode A/D to pass it bit-perfect to an MQA DAC).</p>
-        <div class="row">
+        <p id="player-route" class="hint engine-only"></p>
+        <p class="hint engine-only">音声(CD・音声ファイル・DSD)は<a href="https://github.com/aon-co-jp/open-bar">open-bar</a>エンジンで再生します(排他モードはWindows)。映像(DVD/Blu-ray/動画)はこの画面の映像プレーヤーで再生します。MQAは復号せず、判別のみ行います(MQA対応DACへはビットパーフェクトで素通しできるモードA/Dで再生)。 / Audio (CD, audio files, DSD) plays through the open-bar engine (exclusive modes: Windows). Video (DVD/Blu-ray/movies) plays in the on-screen video player. MQA is detected only, never decoded (use mode A/D to pass it bit-perfect to an MQA DAC).</p>
+        <div class="row engine-only">
           <button id="player-combo-btn">映像+音声の組み合わせ(フォルダ選択) / Video + audio combos (pick folder)</button>
           <button id="player-combo-save-btn" disabled>選んだ組み合わせを.obar.jsonで保存 / Save selected combo as .obar.json</button>
         </div>
-        <ul id="player-tracks"></ul>
-        <button id="player-play-btn" disabled>▶ 再生 / Play</button>
+        <ul id="player-tracks" class="disc-only"></ul>
+        <button id="player-play-btn" class="disc-only" disabled>▶ 再生 / Play</button>
         <video id="player-media" controls style="width:100%;max-height:360px"></video>
         <p id="player-status" class="hint"></p>
       </section>
 
-      <section>
+      <section id="bridge-section">
         <h2>0.5. システム音声のアップサンプリング(YouTube・ブラウザ・音楽アプリ) / System-audio upsampling (YouTube, browsers, music apps)</h2>
         <p class="hint">Windowsが出している音を受け取り、高品質のsincアップサンプル(352.8/384 kHzまで)と32bitで、別のDACへ排他モードで送り直します。<b>使い方:</b> (1) Windowsの「サウンド」で、<b>既定の出力をDACではない出力</b>(例: HDMIモニターの音声)にする。 (2) 下で「受け取る出力」にそれを、「送り先のDAC」に本物のDACを選んで開始。 / Takes the sound Windows is playing and re-sends it to a separate DAC in exclusive mode with high-quality sinc upsampling (up to 352.8/384 kHz) and 32-bit. <b>How:</b> (1) In Windows Sound settings make a <b>non-DAC output the default</b> (e.g. HDMI monitor audio). (2) Pick it below as the capture output, pick the real DAC as the destination, and start.</p>
         <div class="row">

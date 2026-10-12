@@ -680,7 +680,8 @@ async function playItem(item, drive) {
   } else {
     // 映像(DVD/Blu-ray/MP4/MKV等): 映像は引き上げて消音で表示し、音声は別に取り出してopen-barでアップサンプリング再生する。
     // 音声を時間の基準(組み合わせ再生と同じ仕組み)に映像を追従させる。
-    const ready = await invoke("prepare_disc_item_for_playback", { paths: item.paths, video: true, targetHeight: videoTargetHeight() });
+    // 変換できない環境(ffmpegが無いスマホ等)では、元のファイルをそのまま再生する。
+    const ready = await invoke("prepare_disc_item_for_playback", { paths: item.paths, video: true, targetHeight: videoTargetHeight() }).catch(() => item.paths[0]);
     playerMedia.style.display = "";
     playerMedia.src = convertFileSrc(ready);
     let audioPath = null;
@@ -701,6 +702,7 @@ async function playItem(item, drive) {
 }
 
 function videoTargetHeight() {
+  if (!ffmpegLikely) return null;
   const h = Number(document.getElementById("player-vres").value);
   return h > 0 ? h : null;
 }
@@ -768,7 +770,34 @@ playerScanBtn.addEventListener("click", async () => {
   }
 });
 
+// スマホ/タブレット(Android/iOS): ネイティブのファイル選択は content:// を返し、映像プレーヤーが読めない。
+// ブラウザ標準のファイル入力でFileを受け取り、メモリ上のURL(Blob)で再生する。
+const MOBILE_UA = /Android|iPhone|iPad/i.test(navigator.userAgent);
+const playerFileInput = document.getElementById("player-file-input");
+let playerBlobUrl = null;
+playerFileInput.addEventListener("change", async () => {
+  const f = playerFileInput.files && playerFileInput.files[0];
+  if (!f) return;
+  if (playerBusy) return;
+  setPlayerBusy(true);
+  await stopEverything();
+  try {
+    if (playerBlobUrl) URL.revokeObjectURL(playerBlobUrl);
+    playerBlobUrl = URL.createObjectURL(f);
+    playerMedia.style.display = "";
+    playerMedia.muted = false;
+    playerMedia.src = playerBlobUrl;
+    await playerMedia.play();
+    playerStatus.textContent = `再生中 / Playing: ${f.name}`;
+  } catch (e) {
+    playerStatus.textContent = `再生できません(この端末が対応していない形式の可能性) / Cannot play (format may be unsupported on this device): ${e}`;
+  } finally {
+    setPlayerBusy(false);
+    playerFileInput.value = "";
+  }
+});
 playerFileBtn.addEventListener("click", async () => {
+  if (MOBILE_UA) { playerFileInput.click(); return; }
   const sel = await open({
     multiple: false,
     filters: [
@@ -859,6 +888,18 @@ document.getElementById("player-mode").addEventListener("change", async () => {
   if (barActive) await invoke("bar_set_mode", { mode: document.getElementById("player-mode").value });
 });
 showModeDesc();
+// このOSで使える機能を調べ、使えないUI(光学ドライブ・排他モード・システム音声の橋渡し・映像の変換)を隠す。
+let engineAvailable = true;
+let ffmpegLikely = true;
+(async () => {
+  const hide = (sel) => document.querySelectorAll(sel).forEach((e) => (e.style.display = "none"));
+  const modes = await invoke("bar_modes").catch(() => []);
+  if (!modes.length) { engineAvailable = false; hide(".engine-only"); }
+  await invoke("list_optical_drives").then((d) => { if (!d.length) hide(".disc-only"); }).catch(() => hide(".disc-only"));
+  await invoke("bridge_devices").catch(() => hide("#bridge-section"));
+  // スマホ/タブレット(Android)にはffmpegが無い: 映像の変換(アップコンバート)は行わず、対応形式をそのまま再生する。
+  if (/Android|iPhone|iPad/i.test(navigator.userAgent)) { ffmpegLikely = false; hide("#vres-row"); hide("#vres-hint"); hide(".engine-only"); }
+})();
 // システム音声のアップサンプリング(ループバック橋渡し、Windows)
 const bridgeCapture = document.getElementById("bridge-capture");
 const bridgeOutput = document.getElementById("bridge-output");
