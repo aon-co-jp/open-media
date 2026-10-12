@@ -33,7 +33,7 @@ pub fn modes() -> Vec<ModeText> {
     [PlayMode::Shared, PlayMode::Exclusive, PlayMode::ExclusiveUpsample, PlayMode::Dop].into_iter().map(mode_text).collect()
 }
 
-pub fn play(path: &str, mode: &str, treble: bool, bits: u16) -> Result<(), String> {
+pub fn play(path: &str, mode: &str, treble: bool, treble_all: bool, bits: u16) -> Result<(), String> {
     let m = parse_mode(mode)?;
     if !std::path::Path::new(path).exists() {
         return Err(format!("ファイルがありません: {path}"));
@@ -42,6 +42,7 @@ pub fn play(path: &str, mode: &str, treble: bool, bits: u16) -> Result<(), Strin
         p.stop();
         p.set_mode(m);
         p.set_treble_restore(treble);
+        p.set_treble_all(treble_all);
         p.set_bits(bits);
         p.set_playlist(vec![path.to_string()]);
         p.play(0);
@@ -60,6 +61,7 @@ pub fn set_mode(mode: &str) -> Result<(), String> {
     Ok(())
 }
 pub fn set_treble(on: bool) { with(|p| p.set_treble_restore(on)) }
+pub fn set_treble_all(on: bool) { with(|p| p.set_treble_all(on)) }
 pub fn status() -> Status { with(|p| p.status()) }
 pub fn is_mqa(path: &str) -> bool { open_bar::mqa::is_mqa_file(path) }
 pub fn auto_pair(dir: &str) -> Vec<Combo> { combo::auto_pair(dir) }
@@ -90,7 +92,7 @@ mod tests {
             .map(|s| s.success())
             .unwrap_or(false);
         assert!(ok, "ffmpegでテスト用WAVを作れません");
-        play(wav.to_str().unwrap(), "shared", false, 24).unwrap();
+        play(wav.to_str().unwrap(), "shared", false, false, 24).unwrap();
         // デバッグビルドは遅いので、再生が始まる(位置が進む)まで最大30秒待つ。
         let t0 = std::time::Instant::now();
         while status().position_secs < 0.3 && t0.elapsed().as_secs() < 30 {

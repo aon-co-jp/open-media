@@ -627,7 +627,8 @@ async function startBar(path, allowFallback = true) {
     : "";
   try {
     const bits = Number(document.getElementById("player-bits").value);
-  await invoke("bar_play", { path, mode, treble, bits });
+  const trebleAll = document.getElementById("player-treble-all").checked;
+  await invoke("bar_play", { path, mode, treble, trebleAll, bits });
   } catch (e) {
     if (!allowFallback) throw e;
     // open-barが使えない環境(Android/iOS、音声デバイスが開けない等)では、WebViewの再生へ縮退する。
@@ -843,6 +844,9 @@ playerSeek.addEventListener("change", async () => {
 document.getElementById("player-vol").addEventListener("input", (e) => invoke("bar_set_volume", { volume: Number(e.target.value) }));
 document.getElementById("player-treble").addEventListener("change", (e) => {
   if (barActive) invoke("bar_set_treble", { on: e.target.checked });
+});
+document.getElementById("player-treble-all").addEventListener("change", (e) => {
+  if (e.target.checked) document.getElementById("player-treble").checked = true; // 全音源に掛けるには高音補正そのものも有効にする
 });
 async function showModeDesc() {
   if (!barModes.length) barModes = await invoke("bar_modes").catch(() => []);
