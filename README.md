@@ -14,10 +14,10 @@ CD / DVD / Blu-ray の書き込み・音声/動画の変換・ISO作成(make-dis
 
 | 環境 | ファイル |
 |---|---|
-| Windows | `open-media_0.1.2_x64-setup.exe` / `.msi` |
-| macOS (Apple Silicon / Intel) | `open-media_0.1.2_aarch64.dmg` / `open-media_0.1.2_x64.dmg` |
+| Windows | `open-media_0.1.3_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.3_aarch64.dmg` / `open-media_0.1.3_x64.dmg` |
 | Linux | `.deb` / `.rpm` / `.AppImage` |
-| Android(スマホ・タブレット共通) | `open-media_0.1.2_android-universal.apk`(未署名、サイドロード) |
+| Android(スマホ・タブレット共通) | `open-media_0.1.3_android-universal.apk`(未署名、サイドロード) |
 
 ## できること
 
