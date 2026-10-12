@@ -13,14 +13,17 @@ esac
 VER="v26.09.0-0"
 ZIP_VER="26.09.0-0"
 DEST="src-tauri/binaries/poppler"
-TMP="${RUNNER_TEMP:-/tmp}/poppler-fetch"
+# RUNNER_TEMPはD:\a\_temp形式(バックスラッシュ)で、そのままxargs/dirnameに通すと区切りが消える(CI実証: v0.1.32が失敗)。
+BASE="${RUNNER_TEMP:-/tmp}"
+if command -v cygpath >/dev/null 2>&1; then BASE="$(cygpath -u "$BASE")"; fi
+TMP="$BASE/poppler-fetch"
 rm -rf "$TMP" "$DEST"; mkdir -p "$TMP" "$DEST"
 for attempt in 1 2 3; do
   curl -sfL -o "$TMP/p.zip" "https://github.com/oschwartz10612/poppler-windows/releases/download/${VER}/Release-${ZIP_VER}.zip" && break
   echo "fetch-poppler-sidecars.sh: download attempt $attempt failed" >&2; sleep $((attempt * 5))
 done
 unzip -q "$TMP/p.zip" -d "$TMP"
-BIN=$(find "$TMP" -iname pdftoppm.exe | head -1 | xargs dirname)
+BIN=$(dirname "$(find "$TMP" -iname pdftoppm.exe | head -1)")
 # 配置は poppler/bin(exe+DLL) と poppler/share/poppler(poppler-data: CJK用cMap等)。
 # popplerはDLLの隣の ../share/poppler を参照するため、この相対配置を保つ。
 mkdir -p "$DEST/bin" "$DEST/share"
