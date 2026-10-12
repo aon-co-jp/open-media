@@ -1,6 +1,6 @@
 [package]
 name = "open-media"
-version = "0.1.4"
+version = "0.1.5"
 description = "Cross-platform CD/DVD/Blu-ray writing & format conversion GUI"
 authors = ["aon-co-jp"]
 edition = "2021"
