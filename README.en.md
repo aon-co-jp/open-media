@@ -28,7 +28,9 @@ Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
 
 ### From open-bar (playback) — "0. Disc player"
 - **Hybrid playback**: audio (CD, audio files, DSD) plays through the open-bar engine; video (DVD / Blu-ray / movies) plays in the on-screen video player.
-- **Playback modes**: B shared mode with high-quality upsampling (default) / A exclusive mode, bit-perfect / E exclusive with upsampling / D DoP (DSD as-is to the DAC; DoP-capable DACs only).
+- **Playback modes**: E exclusive mode with high-quality upsampling (default; CD to 352.8 kHz, 192 kHz to 384 kHz; falls back to shared mode if the device refuses) / B shared mode with upsampling / A exclusive mode, bit-perfect / D DoP (DSD as-is to the DAC; DoP-capable DACs only).
+- **32-bit output (default)**; devices that refuse it fall back to 24-bit (internal processing is f32, so real resolution stops at 24-bit).
+- **Video upconversion**: DVD / MP4 / MKV are enlarged to Full HD / 4K while playing (lanczos interpolation, not AI super-resolution). Audio is extracted and played with upsampling.
 - **Treble restoration** (for MP3), pause, seek, volume, live mode switching.
 - **Disc items are chosen with radio buttons.** Several tracks or titles can never play at the same time.
 - **Video + separate audio combos** (for example an MP4 movie with DSD audio). The audio is the master clock and the video follows it; combos can be saved as `.obar.json`.

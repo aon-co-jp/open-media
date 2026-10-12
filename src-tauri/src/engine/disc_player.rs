@@ -139,7 +139,7 @@ pub fn prepare(paths: &[String], video_hint: bool, target_height: Option<u32>) -
         };
         cmd.args(["-vf", vf.as_str(), "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"]);
     } else {
-        cmd.args(["-vn", "-c:a", "pcm_s24le"]);
+        cmd.args(["-vn", "-c:a", "pcm_s32le"]); // 32bit整数で取り出す(後段で24bitに落とさない)
     }
     let tmp = dir.join(format!("disc-{key:x}.part.{e}"));
     let st = cmd.arg(&tmp).output().map_err(|e| format!("ffmpegを起動できません: {e}"))?;

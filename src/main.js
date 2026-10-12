@@ -626,7 +626,8 @@ async function startBar(path, allowFallback = true) {
     ? "MQAを検出しました。復号は行いません。MQA対応DACへ渡すにはモードA(排他・ビットパーフェクト)で音量を100%にして再生してください。それ以外では通常のPCMとして鳴ります。 / MQA detected. It is never decoded. For an MQA DAC use mode A (exclusive, bit-perfect) at 100% volume; otherwise it plays as ordinary PCM."
     : "";
   try {
-    await invoke("bar_play", { path, mode, treble });
+    const bits = Number(document.getElementById("player-bits").value);
+  await invoke("bar_play", { path, mode, treble, bits });
   } catch (e) {
     if (!allowFallback) throw e;
     // open-barが使えない環境(Android/iOS、音声デバイスが開けない等)では、WebViewの再生へ縮退する。

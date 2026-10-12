@@ -33,7 +33,7 @@ pub fn modes() -> Vec<ModeText> {
     [PlayMode::Shared, PlayMode::Exclusive, PlayMode::ExclusiveUpsample, PlayMode::Dop].into_iter().map(mode_text).collect()
 }
 
-pub fn play(path: &str, mode: &str, treble: bool) -> Result<(), String> {
+pub fn play(path: &str, mode: &str, treble: bool, bits: u16) -> Result<(), String> {
     let m = parse_mode(mode)?;
     if !std::path::Path::new(path).exists() {
         return Err(format!("ファイルがありません: {path}"));
@@ -42,6 +42,7 @@ pub fn play(path: &str, mode: &str, treble: bool) -> Result<(), String> {
         p.stop();
         p.set_mode(m);
         p.set_treble_restore(treble);
+        p.set_bits(bits);
         p.set_playlist(vec![path.to_string()]);
         p.play(0);
     });
@@ -89,7 +90,7 @@ mod tests {
             .map(|s| s.success())
             .unwrap_or(false);
         assert!(ok, "ffmpegでテスト用WAVを作れません");
-        play(wav.to_str().unwrap(), "shared", false).unwrap();
+        play(wav.to_str().unwrap(), "shared", false, 24).unwrap();
         // デバッグビルドは遅いので、再生が始まる(位置が進む)まで最大30秒待つ。
         let t0 = std::time::Instant::now();
         while status().position_secs < 0.3 && t0.elapsed().as_secs() < 30 {

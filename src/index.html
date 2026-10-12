@@ -22,15 +22,22 @@
         <div class="row">
           <label>再生モード(音声) / Audio mode:
             <select id="player-mode">
-              <option value="shared" selected>B 共有モード・高品質アップサンプル(既定) / B Shared · HQ upsample (default)</option>
+              <option value="shared">B 共有モード・高品質アップサンプル / B Shared · HQ upsample</option>
               <option value="exclusive">A 排他モード・ビットパーフェクト / A Exclusive · bit-perfect</option>
-              <option value="exclusive_upsample">E 排他モード・高品質アップサンプル / E Exclusive · HQ upsample</option>
+              <option value="exclusive_upsample" selected>E 排他モード・高品質アップサンプル(既定。CDは352.8kHz、192kHzは384kHzまで) / E Exclusive · HQ upsample (default; CD to 352.8 kHz, 192 kHz to 384 kHz)</option>
               <option value="dop">D DoP・DSDのままDACへ(対応DACのみ) / D DoP · DSD as-is (DoP DAC only)</option>
+            </select>
+          </label>
+          <label>出力ビット / Output bits:
+            <select id="player-bits">
+              <option value="32" selected>32bit(既定) / 32-bit (default)</option>
+              <option value="24">24bit</option>
             </select>
           </label>
           <label><input type="checkbox" id="player-treble" /> 高音補正(MP3向け) / Treble restoration (MP3)</label>
         </div>
         <p id="player-mode-desc" class="hint"></p>
+        <p class="hint">32bitは、排他モードでDACへ渡す形式です。32bitを受け付けない機器は自動で24bitに落とします。内部処理は32bit浮動小数点(有効な仮数は24bit)のため、32bitにしても実際の分解能が24bitを超えるわけではなく、多くのDACも24bitまでです(変換回数を減らし余裕を持たせる効果)。 / 32-bit is the format sent to the DAC in exclusive mode; devices that reject it fall back to 24-bit. Internal processing is 32-bit float (24-bit mantissa), so real resolution does not exceed 24-bit and most DACs stop at 24-bit; the benefit is headroom and one fewer conversion stage.</p>
         <p id="player-mqa" class="hint"></p>
         <div class="row">
           <label>映像のアップコンバート(DVD/MP4/MKV等) / Video upconvert:

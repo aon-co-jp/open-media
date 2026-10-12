@@ -323,7 +323,7 @@ async fn prepare_cd_track_for_playback(drive: String, track: u8) -> Result<Strin
 fn bar_modes() -> Vec<open_bar::player::ModeText> { engine::bar_player::modes() }
 #[tauri::command]
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
-fn bar_play(path: String, mode: String, treble: bool) -> Result<(), String> { engine::bar_player::play(&path, &mode, treble) }
+fn bar_play(path: String, mode: String, treble: bool, bits: u16) -> Result<(), String> { engine::bar_player::play(&path, &mode, treble, bits) }
 #[tauri::command]
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn bar_pause() { engine::bar_player::pause() }
@@ -369,7 +369,7 @@ const BAR_NA: &str = "このOSではopen-barエンジンは使えません(WebVi
 fn bar_modes() -> Vec<serde_json::Value> { vec![] }
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[tauri::command]
-fn bar_play(_path: String, _mode: String, _treble: bool) -> Result<(), String> { Err(BAR_NA.into()) }
+fn bar_play(_path: String, _mode: String, _treble: bool, _bits: u16) -> Result<(), String> { Err(BAR_NA.into()) }
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[tauri::command]
 fn bar_pause() {}
