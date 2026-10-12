@@ -1,0 +1,55 @@
+# open-media
+
+[日本語](README.md) | **English**
+
+**open-media = [make-disk](https://github.com/aon-co-jp/make-disk) + [open-bar](https://github.com/aon-co-jp/open-bar)**
+
+One app that combines disc burning, audio/video conversion and ISO creation (make-disk) with a high-quality audio/video player (open-bar). It targets Windows, macOS, Linux and Android (phones and tablets) from a single codebase (Rust + Tauri).
+
+> make-disk stays at its final release. Development continues here in open-media.
+
+## Download
+
+Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
+
+| Platform | File |
+|---|---|
+| Windows | `open-media_0.1.0_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.0_aarch64.dmg` / `open-media_0.1.0_x64.dmg` |
+| Linux | `.deb` / `.rpm` / `.AppImage` |
+| Android (phones and tablets) | `open-media_0.1.0_android-universal.apk` (unsigned, sideload) |
+
+## Features
+
+### From make-disk (convert and burn)
+- Burn CD / DVD / Blu-ray, write ISO images, rip audio CDs
+- Convert audio and video, automatic bitrate fitting, range cutting
+- AI noise reduction, AI bandwidth extension, AI super-resolution, frame interpolation, surround conversion, PDF spread conversion
+
+### From open-bar (playback) — "0. Disc player"
+- **Hybrid playback**: audio (CD, audio files, DSD) plays through the open-bar engine; video (DVD / Blu-ray / movies) plays in the on-screen video player.
+- **Playback modes**: B shared mode with high-quality upsampling (default) / A exclusive mode, bit-perfect / E exclusive with upsampling / D DoP (DSD as-is to the DAC; DoP-capable DACs only).
+- **Treble restoration** (for MP3), pause, seek, volume, live mode switching.
+- **Disc items are chosen with radio buttons.** Several tracks or titles can never play at the same time.
+- **Video + separate audio combos** (for example an MP4 movie with DSD audio). The audio is the master clock and the video follows it; combos can be saved as `.obar.json`.
+- **MQA**: detection only. It is never decoded (use mode A to pass it through to an MQA DAC).
+
+## Status and known limitations (honest disclosure)
+
+- **Playback with a real disc inserted (CD / DVD / Blu-ray) has not been verified end to end yet.** Only builds and engine-level checks were done.
+- Copy-protected commercial discs cannot be read (no protection is circumvented).
+- DVD / Blu-ray video cannot be played directly in the browser engine, so it is converted to MP4 first. Long titles take a while.
+- Exclusive mode and DoP are Windows-only. On macOS / Linux / Android playback uses shared mode or the video player. Audio-CD ripping and playback are Windows-only.
+- Verification: Windows built on a real machine. Linux (Ubuntu) and Android (arm64) were compile-checked only. macOS is unverified (it is built by GitHub Actions but was not run on hardware).
+- Auto-update is not configured yet (planned for the next release).
+- License: MIT (dependencies keep their own licenses).
+
+## Build
+
+```
+npm install
+npm run tauri dev      # run in development
+npm run tauri build    # build installers
+```
+
+ffmpeg / ffprobe / xorriso are bundled by CI or taken from PATH. See [CLAUDE.md](CLAUDE.md) and [PORTING.md](PORTING.md) (including the make-disk-era development log).

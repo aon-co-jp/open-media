@@ -1,0 +1,4 @@
+/target
+/android/build
+/android/.gradle
+/android/local.properties

@@ -1,0 +1,6 @@
+{
+  "bundle": {
+    "externalBin": ["binaries/ffmpeg", "binaries/ffprobe", "binaries/rs-ffmpeg", "binaries/rs-xorriso"],
+    "resources": { "binaries/poppler/": "poppler/" }
+  }
+}

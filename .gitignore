@@ -1,0 +1,29 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# AIアップミックスの使い捨て検証(tractでのDemucs ONNX動作確認、2026-09-28)。
+# パッチ済みモデル(数百MB〜2GB超)・Python venv・ビルド成果物はコミットしない
+# (整理済みの再現手順はtools/demucs-onnx-patch/README.mdを正本とする)。
+/experiments/

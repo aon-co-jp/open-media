@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "open-media",
+  "version": "0.1.0",
+  "identifier": "jp.co.aon.make-disk",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "open-media",
+        "width": 1000,
+        "height": 720
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": false,
+    "windows": {
+      "nsis": { "installMode": "currentUser", "template": "../installer/installer.nsi" }
+    },
+    "externalBin": [],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVBN0VFREJEOTM0Q0YyMUMKUldRYzhreVR2ZTErV2paS1lLeXJ6Z3l0R05iblpLeE1qTUh4WC9GRkw4dGttUGdFVFpBRlNMdUkK",
+      "endpoints": [
+        "https://github.com/aon-co-jp/open-media/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

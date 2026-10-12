@@ -1,0 +1,96 @@
+[package]
+name = "open-media"
+version = "0.1.0"
+description = "Cross-platform CD/DVD/Blu-ray writing & format conversion GUI"
+authors = ["aon-co-jp"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "make_disk_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+open-mqa = { git = "https://github.com/aon-co-jp/open-mqa", rev = "2d94ada", default-features = false }
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# CPU命令セット(AVX2/AVX512等)のランタイム検出。GPUハードウェア
+# エンコーダが見つからない場合のCPUフォールバック(libx264)が
+# どの程度実用的な速度になりそうかをUIで伝えるために使う。
+open-cpu = { git = "https://github.com/aon-co-jp/open-cpu" }
+# PDF見開き合成(2026-09-16新設)。純Rust実装でネイティブ依存が無く、
+# Android/iOSクロスコンパイルでも問題にならないため選択(PDF自体の
+# ラスタライズはpoppler等の外部ツール〈sidecar〉に任せ、この crate は
+# 見開き合成〈2ページ横連結・綴じ方向による左右入替・4K上限縮小〉のみに使う)。
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+# PDFの綴じ方向一括変換(2026-09-16新設、ページ順序反転による右綴じ⇄
+# 左綴じ変換)。純Rust実装でネイティブ依存が無く、上のimage crateと
+# 同じ理由でAndroid/iOSクロスコンパイルにも問題無い。
+lopdf = "0.36"
+# AI超解像プラグイン(Real-ESRGAN)のオンデマンド取得・展開(2026-09-19新設)。
+ureq = "2"
+# 音声の帯域拡張(LavaSRのONNX推論、純Rust)とFFT(2026-09-19新設)。
+tract-onnx = "0.21"
+rustfft = "6"
+zip = { version = "4", default-features = false, features = ["deflate"] }
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# 自動アップデート確認(2026-09-16新設)。デスクトップのみ対応
+# (Android/iOSはストア/APKサイドロードでの更新が前提のため対象外)。
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+# デスクトップのみ(cpal/WASAPIはAndroid/iOS非対応のためモバイルでは映像と同じWebView再生へ縮退)。
+# ディスクプレーヤーの音声側エンジン(2026-10-12取り込み): ビットパーフェクト/排他モード/DoP/高品質アップサンプル。
+# 映像(DVD/Blu-ray)はWebViewのまま、音声(CD・音声ファイル・DSD)はopen-barで再生するハイブリッド構成。
+open-bar = { git = "https://github.com/aon-co-jp/open-bar", rev = "ef8235b" }
+
+[target.'cfg(windows)'.dependencies]
+# AIアップミックス(HT-Demucs、2026-09-28新設)のGPU高速化。DirectML経由でAMD/NVIDIA/Intelを
+# 問わず動く(Windows標準のGPUアクセラレーションAPI)。ort(Microsoft ONNXRuntimeのRust
+# バインディング、C++実装のネイティブライブラリを実行時に読み込むだけでPythonは使わない)。
+# GPUが無い/対応しない環境では、既存のtract(純Rust、CPU)推論へ自動フォールバックする
+# (rife-ncnn-vulkanのGPU失敗時CPUフォールバックと同じ設計思想)。
+ort = { version = "2.0.0-rc.13", default-features = false, features = ["directml", "load-dynamic", "ndarray"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+# Tauri標準のtauri-plugin-dialogはモバイルでのフォルダ選択を意図的に
+# 未実装としているため(Cargo.tomlに"Does not support folder picker"と
+# 明記)、Android向けにSAF(ACTION_OPEN_DOCUMENT_TREE)を扱う自前プラグインを
+# 追加する。desktopでは標準のdialogプラグインで問題無く動くため、
+# Android限定の依存にしてビルドコストを増やさない。
+tauri-plugin-android-folder = { path = "plugins/tauri-plugin-android-folder" }
+
+
+# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
+
+# Android配布APKは`--debug`ビルド(署名設定が無いため)で、全ABI分のデバッグ情報が入りv0.1.21で約1.58GBに膨らんだ。
+# 行番号だけを残してデバッグ情報を大幅に削り、APKを小さくする(バックトレースの行番号は残る)。
+[profile.dev]
+debug = "line-tables-only"
+
+# 実機の速度を測るテスト用(`cargo test --profile fastcheck ...`)。開発用ビルドは最適化が無くCPU超解像が約100倍遅くなるため、
+# 速度に関わる実機テストは最適化ありで動かす。releaseと違いLTOを切ってビルド時間を短くする。
+[profile.fastcheck]
+inherits = "release"
+lto = false
+codegen-units = 16
+panic = "unwind"
+strip = false
+

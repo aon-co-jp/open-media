@@ -1,0 +1,2 @@
+// フロントエンド(バンドラー無しの素のJS)の未定義変数を検出する。`npm run lint`
+export default [{ files: ["src/**/*.js"], languageOptions: { ecmaVersion: 2023, sourceType: "module", globals: { document: "readonly", window: "readonly", console: "readonly", setTimeout: "readonly", clearTimeout: "readonly", localStorage: "readonly", navigator: "readonly", URL: "readonly", Option: "readonly", Event: "readonly", fetch: "readonly", performance: "readonly", requestAnimationFrame: "readonly", alert: "readonly", confirm: "readonly" } }, rules: { "no-undef": "error" } }];

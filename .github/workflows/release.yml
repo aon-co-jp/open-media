@@ -1,0 +1,225 @@
+name: release
+
+# v*タグをpushした時だけ発火し、Windows/macOS/Linuxのインストーラーを
+# ビルドしてGitHub Releaseへ添付する(open-englishと同じ運用に準拠)。
+# Fires only on a v* tag push, builds installers for Windows/macOS/
+# Linux, and attaches them to a GitHub Release (same convention as
+# open-english).
+#
+# 2026-09-14追加: Android(スマホ/タブレット共通のuniversal APK)も同じ
+# タグでビルドし、同じReleaseへ添付するジョブ(release-android)を追加。
+# この開発機(Windows)ではDeveloper Mode有効化の壁でtauri android build
+# が直接動かせず、Rustクロスコンパイル+手動gradlewパッケージングという
+# 回避策を使っていた(CLAUDE.md「Android実機検証」節参照)が、GitHub
+# Actionsのubuntu-latestランナーにはその制約が無いため、公式の
+# `npm run tauri android build`コマンドをそのまま使える。
+# 2026-09-14: Added an Android job (release-android) building a single
+# universal APK (covers phones and tablets) on the same tag, attached
+# to the same Release. This dev machine (Windows) couldn't run
+# `tauri android build` directly due to a Developer Mode activation
+# blocker (worked around via manual Rust cross-compile + gradlew
+# packaging, see CLAUDE.md "Android実機検証"), but GitHub Actions'
+# ubuntu-latest runner has no such limitation.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest"
+            args: "--target x86_64-apple-darwin"
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # README.md(日英)の「最新版」表記がpackage.jsonのversionとズレたままタグを
+      # pushしてしまうのを防ぐ(scripts/sync-doc-versions.sh参照)。ここでは確認だけ
+      # 行い、書き換え・自動コミットはしない(4ジョブ同時実行でのpush競合を避けるため。
+      # ズレていたら手元で`bash scripts/sync-doc-versions.sh`を実行してコミットし直す)。
+      - name: check README version matches package.json
+        shell: bash
+        run: bash scripts/sync-doc-versions.sh --check
+
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libasound2-dev patchelf ffmpeg xorriso
+
+      - name: install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: install frontend dependencies
+        run: npm install
+
+      # 2026-09-14追加: ffmpeg/ffprobeをsidecarとしてインストーラーへ
+      # 同梱する(ユーザー指示「必要なリポジトリを同梱してインストーラー
+      # 付きアプリとして完成させて」への対応、src-tauri/binaries/
+      # README.md参照)。Windows/Linuxのみ対応(macOSは信頼できる静的
+      # ビルド配布元が未確定のため今回は見送り、xorrisoも同様に見送り
+      # ——いずれも同梱が無ければ従来通りPATH上の実行ファイルへ
+      # フォールバックするため、このステップが無くてもビルド自体は壊れない)。
+      - name: fetch ffmpeg/ffprobe sidecar binaries
+        if: matrix.platform == 'windows-latest' || matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/fetch-ffmpeg-sidecars.sh
+
+      # PDF見開き変換用poppler-utils(Windowsのみ取得、LinuxはdebのdependsでOK)
+      - name: fetch poppler sidecar binaries
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: bash scripts/fetch-poppler-sidecars.sh
+
+      # 2026-09-16追加: 姉妹Rustリスペクト版(rs-FFmpeg/rs-xorriso、MIT
+      # ライセンス)を隣にcloneしてソースからビルドし、sidecarとして
+      # 追加同梱する(ユーザー指示「作成したRust版も同梱して」への対応)。
+      - name: checkout rs-FFmpeg / rs-xorriso
+        if: matrix.platform == 'windows-latest' || matrix.platform == 'ubuntu-22.04'
+        uses: actions/checkout@v4
+        with:
+          repository: aon-co-jp/rs-FFmpeg
+          path: rs-FFmpeg-sibling
+
+      - name: checkout rs-xorriso
+        if: matrix.platform == 'windows-latest' || matrix.platform == 'ubuntu-22.04'
+        uses: actions/checkout@v4
+        with:
+          repository: aon-co-jp/rs-xorriso
+          path: rs-xorriso-sibling
+
+      - name: build rs-FFmpeg/rs-xorriso sidecar binaries
+        if: matrix.platform == 'windows-latest' || matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        env:
+          RS_FFMPEG_DIR: ${{ github.workspace }}/rs-FFmpeg-sibling
+          RS_XORRISO_DIR: ${{ github.workspace }}/rs-xorriso-sibling
+        run: bash scripts/build-rs-tribute-sidecars.sh
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "open-media ${{ github.ref_name }}"
+          releaseBody: |
+            See CLAUDE.md / PORTING.md in the repository for current status and known limitations.
+            現状・既知の制限はリポジトリ内のCLAUDE.md / PORTING.mdを参照してください。
+          releaseDraft: false
+          # 2026-09-16変更: 自動アップデート機能(tauri-plugin-updater)は
+          # GitHubの`/releases/latest/download/...`エイリアスを使うが、
+          # このエイリアスはprerelease扱いのリリースを除外する仕様のため、
+          # falseへ変更した(これによりアップデーターが正しく最新版を
+          # 検出できるようになる)。
+          prerelease: false
+          includeUpdaterJson: false
+          args: ${{ matrix.args }}
+
+  release-android:
+    # 2026-09-16修正: `release`(デスクトップ)ジョブがリリース本体を
+    # 作成するため、それより先にAndroidジョブが完了してAPKを
+    # アップロードしようとすると"release not found"で失敗する
+    # (v0.1.10で実際に確認したレースコンディション)。`needs: release`で
+    # デスクトップ側(全マトリクス)の完了を待ってから実行するようにした。
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # 2026-09-16修正: `android-actions/setup-android@v3`が非推奨の
+      # 'tools'パッケージ取得に失敗して落ちるようになった(Googleが
+      # SDKリポジトリから同パッケージを削除したためと見られる、
+      # v0.1.7リリースで実際に確認)。GitHub Actionsの`ubuntu-latest`
+      # ランナーには元々Android SDK(`cmdline-tools`込み)がプリ
+      # インストールされているため、このステップ自体が不要と判断し
+      # 削除した。**2026-09-16続き修正**: ただし`sdkmanager`自体はPATHに
+      # 通っていない(setup-androidアクションがPATH追加も担っていた)
+      # ことがv0.1.8で判明——`find`で実際のプリインストール済み
+      # `cmdline-tools`配下の`sdkmanager`をフルパスで探して直接呼ぶ形に
+      # 修正した。
+      - name: install NDK
+        run: |
+          sdkmanager=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)
+          echo "using sdkmanager: $sdkmanager"
+          "$sdkmanager" --install "ndk;27.0.12077973"
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+
+      - name: install Rust (Android targets)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: install frontend dependencies
+        run: npm install
+
+      - name: install Tauri CLI
+        run: npm install -g @tauri-apps/cli@2
+
+      # 署名鍵は未設定(Play Store配布ではなくGitHub Releaseからの
+      # サイドロード配布のため、まずは--apk universal debugビルドで
+      # 公開する——CLAUDE.md「Android実機検証」節で実機確認済みの構成と
+      # 同じ)。
+      - name: build Android universal APK
+        run: |
+          # `ANDROID_HOME`はGitHub Actionsのubuntu-latestランナーに
+          # 元々設定済みのOS環境変数——ワークフロー式の`${{ env.X }}`
+          # コンテキストでは見えない(`$GITHUB_ENV`へ明示的に書き出した
+          # 変数しか見えない)ため、シェルの変数展開`$ANDROID_HOME`で
+          # 参照する必要がある。`${{ env.ANDROID_HOME }}`と書いていた
+          # v0.1.9では空文字列に展開され`NDK_HOME=/ndk/27.0.12077973`
+          # という壊れた値になり、tauri CLIが
+          # 「Android NDK invalid」で失敗する実バグがあった。
+          export NDK_HOME="$ANDROID_HOME/ndk/27.0.12077973"
+          npm run tauri android build -- --apk --target aarch64 --target armv7 --target i686 --target x86_64 --debug
+
+      - name: upload APK to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          apk=$(find src-tauri/gen/android -iname "*.apk" | head -1)
+          # `gh release upload local#label`の`#label`はUI表示名のみを
+          # 変え、実際のダウンロードファイル名は元のbasenameのまま
+          # (v0.1.5リリースで実際に確認した挙動)——分かりやすい
+          # ファイル名で配布するため、事前にコピー/リネームしてから
+          # アップロードする。
+          ver="${{ github.ref_name }}"
+          renamed="open-media_${ver#v}_android-universal.apk"
+          cp "$apk" "$renamed"
+          echo "uploading $renamed"
+          gh release upload "${{ github.ref_name }}" "$renamed" --clobber -R "${{ github.repository }}"

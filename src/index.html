@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>open-media</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>open-media</h1>
+      <p class="subtitle">CD / DVD / Blu-ray 書き込み・フォーマット変換</p>
+
+      <section>
+        <h2>0. ディスクプレーヤー / Disc player</h2>
+        <p class="hint">音楽CDのトラックを選んで再生できます。DVD・Blu-ray・データディスク内の音声/動画ファイルも選んで再生できます。 / Select and play audio CD tracks, or pick an audio/video file on a DVD / Blu-ray / data disc.</p>
+        <div class="row">
+          <select id="player-drive"></select>
+          <button id="player-scan-btn">ディスクを読む / Read disc</button>
+          <button id="player-file-btn">ディスク内のファイルを選ぶ... / Pick a file on disc...</button>
+        </div>
+        <div class="row">
+          <label>再生モード(音声) / Audio mode:
+            <select id="player-mode">
+              <option value="shared" selected>B 共有モード・高品質アップサンプル(既定) / B Shared · HQ upsample (default)</option>
+              <option value="exclusive">A 排他モード・ビットパーフェクト / A Exclusive · bit-perfect</option>
+              <option value="exclusive_upsample">E 排他モード・高品質アップサンプル / E Exclusive · HQ upsample</option>
+              <option value="dop">D DoP・DSDのままDACへ(対応DACのみ) / D DoP · DSD as-is (DoP DAC only)</option>
+            </select>
+          </label>
+          <label><input type="checkbox" id="player-treble" /> 高音補正(MP3向け) / Treble restoration (MP3)</label>
+        </div>
+        <p id="player-mode-desc" class="hint"></p>
+        <p id="player-mqa" class="hint"></p>
+        <div class="row">
+          <button id="player-pause-btn" disabled>⏸ 一時停止 / Pause</button>
+          <button id="player-stop-btn" disabled>■ 停止 / Stop</button>
+          <input id="player-seek" type="range" min="0" max="0" step="0.1" value="0" disabled style="flex:1" />
+          <span id="player-time">0:00 / 0:00</span>
+          <label>音量 / Vol <input id="player-vol" type="range" min="0" max="1" step="0.01" value="1" /></label>
+        </div>
+        <p id="player-route" class="hint"></p>
+        <p class="hint">音声(CD・音声ファイル・DSD)は<a href="https://github.com/aon-co-jp/open-bar">open-bar</a>エンジンで再生します(排他モードはWindows)。映像(DVD/Blu-ray/動画)はこの画面の映像プレーヤーで再生します。MQAは復号せず、判別のみ行います(MQA対応DACへはビットパーフェクトで素通しできるモードA/Dで再生)。 / Audio (CD, audio files, DSD) plays through the open-bar engine (exclusive modes: Windows). Video (DVD/Blu-ray/movies) plays in the on-screen video player. MQA is detected only, never decoded (use mode A/D to pass it bit-perfect to an MQA DAC).</p>
+        <div class="row">
+          <button id="player-combo-btn">映像+音声の組み合わせ(フォルダ選択) / Video + audio combos (pick folder)</button>
+          <button id="player-combo-save-btn" disabled>選んだ組み合わせを.obar.jsonで保存 / Save selected combo as .obar.json</button>
+        </div>
+        <ul id="player-tracks"></ul>
+        <button id="player-play-btn" disabled>▶ 再生 / Play</button>
+        <video id="player-media" controls style="width:100%;max-height:360px"></video>
+        <p id="player-status" class="hint"></p>
+      </section>
+
+      <section>
+        <h2>1. ソースファイル</h2>
+        <button id="add-files-btn">ファイルを追加...</button>
+        <ul id="file-list"></ul>
+        <details id="cdda-box">
+          <summary>音楽CDから取り込み / Rip an audio CD (CD-DA)</summary>
+          <p class="hint">音楽CDのトラックを16bit/44.1kHzのWAVとして取り込み、ソースに追加します(Windowsのみ)。各区間を2回読んで一致を確認する簡易セキュアリード。コピーコントロールCDや傷のあるディスクは失敗することがあり、保護の回避は行いません。曲名の自動取得はしません。 / Rips tracks to 16-bit/44.1 kHz WAV and adds them to the source list (Windows only). Simple secure read (each block read twice and compared). Copy-controlled or scratched discs may fail; no protection is circumvented. Track titles are not looked up.</p>
+          <div class="row">
+            <select id="cdda-drive"></select>
+            <button id="cdda-scan-btn">ドライブを読む / Read disc</button>
+          </div>
+          <ul id="cdda-tracks"></ul>
+          <label><input type="checkbox" id="cdda-secure" checked /> セキュアリード(遅いが確実) / Secure read (slower, safer)</label>
+          <button id="cdda-rip-btn" disabled>選択トラックを取り込む(出力先フォルダへ) / Rip selected tracks (to the output folder)</button>
+        </details>
+      </section>
+
+      <section>
+        <h2>2. 出力先フォルダ</h2>
+        <div class="row">
+          <input id="output-folder" type="text" readonly placeholder="未選択" />
+          <button id="pick-output-btn">フォルダを選択...</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>3. 音声フォーマットへ変換(複数選択可)</h2>
+        <div class="checkbox-grid">
+          <label><input type="checkbox" name="audio-format" value="mp3" /> MP3</label>
+          <label><input type="checkbox" name="audio-format" value="wav" /> WAV</label>
+          <label><input type="checkbox" name="audio-format" value="flac" /> FLAC</label>
+          <label><input type="checkbox" name="audio-format" value="aac" /> AAC (M4A)</label>
+          <label><input type="checkbox" name="audio-format" value="ogg" /> OGG (Vorbis)</label>
+          <label><input type="checkbox" name="audio-format" value="opus" /> Opus(高効率・新コーデック、最大510kbps(ステレオ)・48kHz / efficient, modern; max 510 kbps stereo, 48 kHz)</label>
+          <label><input type="checkbox" name="audio-format" value="ac3" /> Dolby Digital (AC-3, 5.1)</label>
+          <label><input type="checkbox" name="audio-format" value="eac3" /> Dolby Digital Plus (E-AC-3, 7.1可 / up to 7.1)</label>
+          <label><input type="checkbox" name="audio-format" value="dxd352" /> 高解像度PCM 352.8kHz / 24bit WAV(DXD相当、R-2R等マルチビットDAC向け / for multi-bit DACs)</label>
+          <label><input type="checkbox" name="audio-format" value="pcm352_32" /> 高解像度PCM 352.8kHz / 32bit WAV</label>
+          <label><input type="checkbox" name="audio-format" value="pcm384_24" /> 高解像度PCM 384kHz / 24bit WAV</label>
+          <label><input type="checkbox" name="audio-format" value="pcm384_32" /> 高解像度PCM 384kHz / 32bit WAV</label>
+          <label><input type="checkbox" name="audio-format" value="pcm705_32" /> 高解像度PCM 705.6kHz / 32bit WAV</label>
+          <label><input type="checkbox" name="audio-format" value="pcm768_32" /> 高解像度PCM 768kHz / 32bit WAV</label>
+          <label><input type="checkbox" name="audio-format" value="dsd64" /> DSD64 (2.8MHz, DSF)</label>
+          <label><input type="checkbox" name="audio-format" value="dsd128" /> DSD128 (5.6MHz, DSF)</label>
+          <label><input type="checkbox" name="audio-format" value="dsd256" /> DSD256 (11.2MHz, DSF)</label>
+          <label><input type="checkbox" name="audio-format" value="dsd512" /> DSD512 (22.6MHz, DSF)</label>
+          <label><input type="checkbox" name="audio-format" value="dsd1024" /> DSD1024 (45.2MHz, DSF)</label>
+        </div>
+        <p class="hint">ハードウェア(DAC)が対応していれば、DSD音源はそのまま再生されます。対応していない場合は、(DSD対応の再生ソフトなら)自動的にPCM音源に変換されて再生されます。そのため、通常はPCM版を別に作る必要はありません。ただし、DSFに対応していない再生ソフト(標準のWindowsプレーヤーなど)では再生できません。 / If your hardware (DAC) supports DSD, the DSD audio is played as is. If it does not, a DSD-capable player automatically converts it to PCM for playback, so you normally do not need a separate PCM version. Players without DSF support (such as the standard Windows player) cannot play it at all.</p>
+        <p class="hint">DSDを作成するときは、PCM(WAV/FLAC/高解像度PCM)は同時に作りません(選択していても自動で除外します)。 / When creating DSD, PCM (WAV/FLAC/high-res PCM) is not created alongside it (automatically skipped even if checked).</p>
+        <div class="row">
+          <label><input type="checkbox" id="dsd-dop-wav" /> DoP(DSD over PCM)のWAVも作る / Also write a DoP (DSD over PCM) WAV</label>
+          <select id="dsd-dop-bits">
+            <option value="24">24bit(DoP標準 / standard)</option>
+            <option value="32">32bit(24bitを左詰め / 24-bit left-justified)</option>
+          </select>
+        </div>
+        <p class="hint">DoP対応DAC+ビットパーフェクト再生専用(音量調整・SRCを通るとノイズ)。PCMレートはDSDレート/16(DSD64=176.4k、DSD128=352.8k、DSD256=705.6k、DSD512=1411.2kHz。384kHzは48kHz系DSDの入れ物で本ツールのDSDとは一致しません)。 / For DoP-capable DACs with bit-perfect playback only (volume control or resampling turns it into noise). PCM rate = DSD rate / 16 (DSD64 = 176.4k, DSD128 = 352.8k, DSD256 = 705.6k, DSD512 = 1411.2 kHz; 384 kHz belongs to 48 kHz-family DSD, which this tool does not produce).</p>
+        <p class="hint">
+          ※DSDを作成するときはPCM版を同時に作りません。DSD非対応のハードウェアでは再生側が自動でPCMへ変換するため、PCM版は容量の無駄になります。<br />
+          When creating DSD, no PCM version is written alongside: on hardware without DSD support the player converts to PCM automatically, so a PCM copy only wastes space.<br />
+          ※DSDはPCM→1bitのΔΣ変調で自前変換しDSFファイルとして保存します(ffmpegはDSDを書き出せないため)。ファイルが非常に大きく(ステレオ1分あたり DSD64≈42MB、DSD128≈85MB、DSD256≈170MB、DSD512≈339MB、DSD1024≈678MB)、高レートほど変換に時間がかかります。音量は安定性のため-6dBに抑えます。Super Audio CDの規格ディスクではなくDSFファイルです。DSD非対応の機器・アプリでは再生できないか、再生ソフト側でPCMへ変換されます(ファイル自体には自動変換の仕組みはありません)。<br />
+          DSD is produced by our own PCM-to-1-bit delta-sigma converter and saved as DSF (ffmpeg cannot write DSD). Files are very large (per stereo minute: DSD64 ~42 MB, DSD128 ~85 MB, DSD256 ~170 MB, DSD512 ~339 MB, DSD1024 ~678 MB) and higher rates convert slowly. Level is reduced by 6 dB for stability. This is a DSF file, not a Super Audio CD disc. Devices/apps without DSD support may not play it, or the player software converts it to PCM — the file itself has no automatic fallback.
+        </p>
+      </section>
+
+      <section>
+        <h2>3.5. AIノイズ除去(音声) / AI noise reduction (audio)</h2>
+        <label><input type="checkbox" id="ai-denoise" /> AIでノイズを低減する(本物のニューラルネット RNNoise を使用) / Reduce noise with a real neural network (RNNoise)</label>
+        <br />
+        <label>強さ / Strength: <input id="ai-denoise-mix" type="range" min="0.1" max="1" step="0.1" value="0.6" /> <span id="ai-denoise-mix-label">0.6</span></label>
+        <p class="hint">
+          ※これは実際の学習済みAIモデル(RNNoise、リカレントニューラルネットワーク、CPUで動作)による処理で、これまでの「AI最適化」のような簡易ヒューリスティックではありません。ただしRNNoiseは主に人の声で学習されたモデルのため、音楽では効果が控えめで高域がやや鈍る場合があります。強さを下げると原音に近くなります。音声の超解像(高音質化)モデルは未実装です。<br />
+          This uses a real trained neural network (RNNoise, a recurrent network, runs on the CPU) — not a heuristic like the earlier "AI-optimized" options. It is trained mainly on speech, so on music the effect is modest and highs may dull slightly; lower the strength to stay closer to the original. Audio super-resolution is not implemented yet.
+        </p>
+      </section>
+
+      <section>
+        <h2>3.6. AI高域生成(帯域拡張、実験的) / AI bandwidth extension (experimental)</h2>
+        <label><input type="checkbox" id="audio-bwe" /> 帯域が欠けた音声の高域をAIで補う(低域はそのまま保持) / Fill in missing highs with AI (the existing band is kept untouched)</label>
+        <br />
+        <label><input type="checkbox" id="audio-bwe-speech" /> 声(ポッドキャスト・電話・音声合成)向け: なだらかに減衰する高域を補う / For speech (podcasts, phone, TTS): fill gently rolling-off highs (not for music)</label><br />
+        <label>カットオフ(Hz、空欄=自動検出) / Cutoff (Hz, blank = auto-detect): <input id="audio-bwe-cutoff" type="number" min="3000" max="19000" placeholder="例: 8000 / e.g. 8000" style="width:8em" /></label>
+        <p class="hint">
+          ※学習済みモデル(LavaSR、Apache-2.0、初回のみ約56MBを自動ダウンロード)で欠けた高域を<b>生成</b>して足します。入力の帯域は一切変更せず、生成した高域は入力の包絡を外挿した値を上限に頭打ちにします(生のモデル出力は音楽で元信号から離れて悪化したため、この設計にしています)。
+          実測: 音楽素材を8kHz/12kHzで帯域制限して試すと、正解の存在する帯域のスペクトル距離(LSD)が無処理より改善(3.4→1.5、2.7→1.6)し、低域は完全に保たれました。<br />
+          ※<b>これは「復元」ではなく合成</b>で、LSDは聴感品質そのものではありません。帯域が欠けていない音源(約20kHzまである)には何もしません。ロッシー音源で元から捨てられた高域を「本物の音」として取り戻せるわけではありません。音声専用出力とDSD向けで、AIノイズ除去(3.5)と併用するとノイズ除去が先に行われます。<br />
+          Generates the missing highs with a trained model (LavaSR, Apache-2.0; ~56 MB is downloaded on first use). The existing band is never modified, and the generated highs are capped by an extrapolation of the input's spectral envelope (the raw model output moved music <i>away</i> from the original, hence this design).
+          Measured on music band-limited at 8/12 kHz, the log-spectral distance in the band where ground truth exists improved over no processing (3.4→1.5, 2.7→1.6) while the low band stayed identical.
+          <b>This is synthesis, not restoration</b>, and LSD is not perceptual quality. Sources that are not band-limited (content up to ~20 kHz) are left alone. It cannot bring back highs that a lossy encoder discarded. Audio-only/DSD outputs; with AI noise reduction (3.5) the denoise runs first.
+        </p>
+      </section>
+
+      <section>
+        <h2>3.7. チャンネル構成(モノ/ステレオ⇔サラウンド変換) / Channel layout (mono/stereo ⇔ surround)</h2>
+        <label>変換先 / Target:
+          <select id="channel-layout">
+            <option value="keep" selected>元のまま(既定) / Keep as-is</option>
+            <option value="mono">モノラル(1ch) / Mono (1ch)</option>
+            <option value="stereo">ステレオ(2ch) / Stereo (2ch)</option>
+            <option value="surround51">5.1ch(FL/FR/FC/LFE/BL/BR)</option>
+            <option value="surround71">7.1ch(5.1ch + SL/SR)</option>
+          </select>
+        </label>
+        <p class="hint">
+          全ての音声出力形式(3.)に適用されます。<br />
+          <b>モノラル/ステレオ → 5.1ch・7.1ch</b>: 元に無い音を新たに生成するわけではない、単純な複製・按分による
+          <b>疑似(バーチャル)サラウンド</b>です(実際のディスクリート5.1ch/7.1ch音源が持つ情報量には及びません)。
+          センターは左右の単純ミックス、リア/サイドは前方の減衰コピー、LFE(低音効果音)は常に無音にします。
+          元から3ch以上ある音源には適用しません(想定外のチャンネル対応付けを避けるため)。<br />
+          <b>サラウンド → ステレオ/モノラル</b>: ffmpeg標準の降ミックス(疑似ではありません)。
+        </p>
+        <p class="hint">
+          Applies to every audio output format (3.). <b>Mono/stereo → 5.1ch/7.1ch</b> is a simple duplication/mix-based
+          <b>pseudo (virtual) surround</b> — it does not generate sound that wasn't in the source, and falls short of a
+          true discrete 5.1/7.1 source. Center is a plain mix of left+right, rear/side channels are attenuated copies
+          of the front, and LFE is always silent. Sources that already have 3+ channels are left untouched (to avoid an
+          unintended channel mapping). <b>Surround → stereo/mono</b> uses ffmpeg's standard downmix (not pseudo).
+        </p>
+      </section>
+
+      <section>
+        <h2>4. 動画フォーマットへ変換(複数選択可)</h2>
+        <div class="checkbox-grid">
+          <label><input type="checkbox" name="video-format" value="mp4" /> MP4 (H.264/AAC)</label>
+          <label><input type="checkbox" name="video-format" value="mkv" /> MKV</label>
+          <label><input type="checkbox" name="video-format" value="avi" /> AVI</label>
+          <label><input type="checkbox" name="video-format" value="mov" /> MOV (QuickTime)</label>
+          <label><input type="checkbox" name="video-format" value="webm" /> WebM</label>
+          <label><input type="checkbox" name="video-format" value="av1-mkv" /> AV1 + Opus (MKV)</label>
+          <label><input type="checkbox" name="video-format" value="av1-webm" /> AV1 + Opus (WebM)</label>
+          <label><input type="checkbox" name="video-format" value="av1-mp4" /> AV1 + AAC (MP4)</label>
+          <label><input type="checkbox" name="video-format" value="hevc-hdr10-mkv" /> HEVC 10bit HDR10 (MKV、音声は無変換 / audio copied)</label>
+          <label><input type="checkbox" name="video-format" value="passthrough-mkv" /> 無変換コピー(MKV) — Dolby Vision/Atmos/サラウンドをそのまま保持 / Lossless copy, keeps Dolby Vision/Atmos</label>
+        </div>
+      </section>
+
+      <section>
+        <h2>4.4. MKVの複数音声・字幕トラック / MKV multiple audio &amp; subtitle tracks</h2>
+        <p class="hint">
+          MKVは、1つのファイルに複数の音声(日本語・英語・解説音声など)と字幕をまとめて入れられます。出力がMKVのときだけ働きます。<br />
+          MKV can hold several audio tracks (e.g. Japanese, English, commentary) and subtitles in one file. This applies to MKV output only.
+        </p>
+        <label><input type="checkbox" id="mkv-keep-all" checked /> 元ファイルの全ての音声・字幕・添付を残す / Keep all audio, subtitle and attachment tracks of the source</label>
+        <br />
+        <button id="mkv-add-audio-btn" type="button">音声トラックを追加... / Add audio track...</button>
+        <button id="mkv-add-sub-btn" type="button">字幕トラックを追加... / Add subtitle track...</button>
+        <ul id="mkv-extra-list"></ul>
+        <p class="hint">追加したトラックは、ソース一覧の先頭のファイルのMKV出力に加わります。言語はISOの3文字コード(日本語=jpn、英語=eng、フランス語=fra など)、タイトルは自由(例: 監督解説)。字幕は再エンコードせず、そのまま入ります。MP4など、MKV以外の出力では複数字幕を持てないため無視されます。 / Added tracks are muxed into the MKV output of the first source file. Language is a 3-letter ISO code (jpn, eng, fra ...); the title is free text. Subtitles are copied without re-encoding. Ignored for non-MKV outputs such as MP4.</p>
+      </section>
+
+      <section>
+        <h2>4.1. Dolby/サラウンド対応の範囲 / Dolby &amp; surround support</h2>
+        <p class="hint">
+          Dolby Vision / Dolby Atmos / Dolby Cinema / IMAX Enhanced / 4DX は各社のライセンス制フォーマットで、make-diskがこれらを新規に生成(エンコード)することはできません。代わりに、(1)元素材に含まれるDolby Vision・Atmos・5.1/7.1サラウンドを壊さない「無変換コピー」、(2)互換性のある下位形式(HDR10、Dolby Digital / Digital Plus、AAC/Opusのサラウンド)への変換、(3)元素材の検出結果のログ表示、に対応します。<br />
+          These are licensed formats; make-disk cannot newly encode Dolby Vision / Atmos / IMAX / 4DX. It can (1) losslessly copy existing Dolby Vision / Atmos / surround tracks, (2) convert to compatible lower formats (HDR10, Dolby Digital / Plus, surround AAC/Opus), and (3) report what it detects in the source. HDR10 conversion keeps the base layer; Dolby Vision dynamic metadata is dropped.
+        </p>
+      </section>
+
+      <section>
+        <h2>4.2. 解像度・フレームレート(動画) / Resolution &amp; frame rate (video)</h2>
+        <p class="hint">
+          DVDは通常解像度(720×480)とフルHD、ブルーレイはフルHDと4Kが選べます。
+          カスタムで720×480〜5K/8Kまで自由に指定することもできます。<br />
+          DVD supports standard (720x480) or Full HD; Blu-ray supports Full HD or 4K.
+          Custom lets you specify anything from 720x480 up to 5K/8K.
+        </p>
+        <h3>ディスク変換の方向 / Disc conversion direction</h3>
+        <select id="disc-direction">
+          <option value="any" selected>指定なし(全ての解像度から選択) / Any (all resolutions)</option>
+          <option value="bd_to_dvd">ブルーレイ → DVD(通常のDVD解像度 720×480/720×576、またはフルHD) / Blu-ray to DVD (standard DVD 720x480/720x576, or Full HD)</option>
+          <option value="dvd_to_bd">DVD → ブルーレイ(フルHD または 4K) / DVD to Blu-ray (Full HD or 4K)</option>
+        </select>
+        <p class="hint">
+          ※フルHDのDVDは標準のDVD-Video規格(720×480)ではないため、家庭用DVDプレーヤーでは再生できない場合があります(PCや対応プレーヤー向け)。DVD→4Kの拡大は補間による拡大で、失われたディテールを補う本格的なAI超解像ではありません。<br />
+          Full HD on a DVD is outside the DVD-Video standard (720x480) and may not play on set-top DVD players (PC / capable players only). Upscaling DVD to 4K is interpolation, not true AI super-resolution that restores lost detail.
+        </p>
+        <h3>解像度 / Resolution</h3>
+        <select id="resolution-preset">
+          <option value="unspecified" selected>無指定(元の解像度のまま) / Unspecified (keep original)</option>
+          <option value="720x480">720×480(DVD標準 / DVD standard)</option>
+          <option value="720x576">720×576(DVD PAL方式 / DVD PAL)</option>
+          <option value="1920x1080">1920×1080(フルHD / Full HD)</option>
+          <option value="3840x2160">3840×2160(4K)</option>
+          <option value="5120x2880">5120×2880(5K)</option>
+          <option value="7680x4320">7680×4320(8K)</option>
+          <option value="custom">カスタム指定 / Custom</option>
+          <option value="ai">AI最適化 / AI-optimized</option>
+        </select>
+        <span id="resolution-custom-inputs" hidden>
+          <input id="resolution-custom-width" type="number" min="1" placeholder="幅 / width (px)" style="width:7em" />
+          ×
+          <input id="resolution-custom-height" type="number" min="1" placeholder="高さ / height (px)" style="width:7em" />
+        </span>
+        <p id="resolution-ai-hint" class="hint" hidden>
+          ※「AI最適化」は元動画の解像度を検出し、4Kを超える場合のみ4Kへ抑える簡易的な処理です(意味的な画質判断は行いません)。<br />
+          Note: "AI-optimized" detects the source resolution and only caps it at 4K when it exceeds that — it does not perform semantic quality analysis.
+        </p>
+
+        <h3>フレームレート(FPS) / Frame rate (FPS)</h3>
+        <select id="fps-preset">
+          <option value="unspecified" selected>不明・無指定(元のフレームレートのまま) / Unspecified (keep original)</option>
+          <option value="24">24 FPS</option>
+          <option value="30">30 FPS</option>
+          <option value="60">60 FPS</option>
+          <option value="120">120 FPS</option>
+          <option value="custom">カスタム指定 / Custom</option>
+          <option value="ai">AI最適化 / AI-optimized</option>
+        </select>
+        <input id="fps-custom-value" type="number" min="1" placeholder="例: 50 / e.g. 50" hidden />
+        <p id="fps-ai-hint" class="hint" hidden>
+          ※「AI最適化」は元動画のフレームレートを検出し、24/30/60/120のうち最も近い値へ合わせる簡易的な処理です(意味的な動き解析は行いません)。<br />
+          Note: "AI-optimized" detects the source frame rate and snaps it to the nearest of 24/30/60/120 — it does not perform semantic motion analysis.
+        </p>
+      </section>
+
+      <section>
+        <h2>4.3. AI超解像とフレーム補間 / AI super-resolution and frame interpolation</h2>
+        <label><input type="checkbox" id="ai-upscale" /> 映像をAIで拡大し、失われたディテールを補う(補間ではなく学習済みニューラルネット) / Upscale video with a trained neural network that restores detail (not interpolation)</label>
+        <div class="row" style="flex-wrap:wrap;align-items:center">
+          <label>映像の内容 / Content:
+            <select id="ai-upscale-content">
+              <option value="live" selected>実写 / Live action</option>
+              <option value="anime">アニメ・CG / Anime, CG</option>
+            </select>
+          </label>
+          <label>モデル / Model:
+            <select id="ai-upscale-model">
+              <option value="auto" selected>自動(実写→実写向け、アニメ→高速) / Auto (live→general, anime→fast)</option>
+              <option value="realesr-general-x4v3">実写向け(realesr-general-x4v3、約2倍遅い) / Live action (about 2x slower)</option>
+              <option value="realesr-animevideov3">高速・アニメ向け(realesr-animevideov3) / Fast, anime</option>
+              <option value="realesrgan-x4plus">高品質・非常に遅い(realesrgan-x4plus、GPU必須・4倍のみ)</option>
+            </select>
+          </label>
+          <label>実行環境 / Device:
+            <select id="ai-upscale-backend">
+              <option value="auto" selected>自動(このPCで実測して一番速い方式) / Auto (measured fastest on this PC)</option>
+              <option value="hybrid">CPU+GPU併用 / CPU + GPU together</option>
+              <option value="gpu">GPU(Vulkan)</option>
+              <option value="cpu">CPUのみ / CPU only</option>
+            </select>
+          </label>
+          <label>倍率 / Scale:
+            <select id="ai-upscale-scale"><option value="0" selected>自動 / Auto</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select>
+          </label>
+        </div>
+        <div class="row" style="flex-wrap:wrap;align-items:center">
+          <label>インターレース解除 / Deinterlace:
+            <select id="ai-deinterlace">
+              <option value="auto" selected>自動判定 / Auto-detect</option>
+              <option value="off">しない / Off</option>
+              <option value="interlaced">インターレース(bwdif) / Interlaced</option>
+              <option value="telecine">テレシネ(24pへ戻す) / Telecine (back to 24p)</option>
+            </select>
+          </label>
+          <label><input type="checkbox" id="ai-crop-bars" checked /> 黒帯を切ってAI処理し、後で戻す / Crop black bars for the AI, restore afterwards</label>
+          <label><input type="checkbox" id="ai-skip-static" checked /> 真っ黒・静止コマはAIを省略 / Skip AI on black / still frames</label>
+          <label>フレームレート / Frame rate:
+            <select id="ai-target-fps">
+              <option value="0" selected>元のまま / Keep original</option>
+              <option value="60">60 FPS(RIFE補間) / 60 FPS (RIFE)</option>
+              <option value="120">120 FPS(RIFE補間) / 120 FPS (RIFE)</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="flex-wrap:wrap;align-items:center">
+          <button id="ai-bench-btn" type="button">このPCのCPU/GPUを測定 / Benchmark CPU vs GPU</button>
+          <button id="ai-estimate-btn" type="button">下調べ(所要時間・空き容量) / Estimate time &amp; space</button>
+          <button id="ai-cancel-btn" type="button" disabled>処理を中止 / Cancel</button>
+        </div>
+        <progress id="ai-progress" value="0" max="100" hidden style="width:100%"></progress>
+        <pre id="ai-status" class="hint" style="white-space:pre-wrap"></pre>
+        <p class="hint">
+          ※<b>実行方式は自動で選びます</b>: 初回にこのPCのCPUとGPUを実測し、CPUのみ/GPUのみ/併用のうち最も速い方式を使います(結果は保存され、CPUの構成が変わると再測定)。open-cudaにはGPUの畳み込み演算が無く、AI計算そのものはCPU(自前のAVX2+FMA)とVulkan(NCNN)で行っています。<br />
+          ※<b>非常に時間がかかります</b>。「下調べ」で見積もりを確認してください(720×480の1コマ: CPU(32スレッド)約1.3秒、GT 730 GPU約2.8秒、併用で約1.3倍)。映画1本は数日規模になり得ます。途中で中止しても、同じ設定でもう一度実行すれば続きから再開します。<br />
+          ※真っ黒・単色・ほぼ静止のコマはAIを通さず再利用します。これが減らすのは主に<b>計算時間</b>で、ディスク容量への効果は小さいです(エンコーダは静止画面にほとんどビットを使わないため)。<br />
+          ※<b>フレーム補間(RIFE)</b>は近似です。動きの大きい場面・場面転換でゴーストやゆがみが出ることがあり、本当に120fpsで撮影した映像と同じにはなりません。4Kでは非常に遅く、一時的に数GBのディスクを使います。初回のみプラグイン(約12MB)を取得します。<br />
+          ※初回のみAIのプラグイン(約45MB、MIT)を自動ダウンロードします。解像度の指定(4.2)や6.のアップコンバートと併用すると、AI拡大後に指定の解像度へリサイズします(例: DVD→4K)。<br />
+          Device choice is automatic: the first run measures this PC's CPU and GPU and uses the fastest of CPU-only / GPU-only / both (cached; re-measured if the CPU changes). open-cuda has no GPU convolution, so the AI math itself runs on our own AVX2+FMA CPU kernel and Vulkan (NCNN).<br />
+          <b>Very slow</b> — check "Estimate" first (per 720x480 frame: CPU 32 threads ~1.3 s, GT 730 GPU ~2.8 s, both ~1.3x faster). A feature film can take days. If you cancel, running again with the same settings resumes.<br />
+          Black / flat / near-static frames skip the AI; that mainly saves <b>compute time</b> and has little effect on disc capacity (encoders spend almost no bits on still images).<br />
+          <b>Frame interpolation (RIFE)</b> is an approximation: fast motion and scene cuts can show ghosting or warping, and the result is not the same as real 120 fps footage. It is very slow at 4K and temporarily uses several GB of disk. The plugin (~12 MB) is fetched on first use. The AI plugin (~45 MB, MIT) is downloaded on first use; combined with a resolution preset (4.2) or the section 6 upconvert, the result is resized to it (e.g. DVD→4K).
+        </p>
+      </section>
+
+      <section>
+        <h2>4.5. PDF見開き変換(最大4K、右綴じ/左綴じ) / PDF spread conversion (up to 4K, right/left binding)</h2>
+        <p class="hint">
+          ソースファイルに含まれるPDF(1で追加)を、見開き2ページを1枚に合成した画像として書き出します。<br />
+          Converts PDFs (added in section 1) into images with two facing pages composited into one spread.
+        </p>
+        <label><input type="radio" name="pdf-binding" value="right_to_left" checked /> 右綴じ(日本式・右から左へ読む) / Right-bound (read right to left)</label>
+        <br />
+        <label><input type="radio" name="pdf-binding" value="left_to_right" /> 左綴じ(欧米式・左から右へ読む) / Left-bound (read left to right)</label>
+        <p class="hint">
+          ※PDFのラスタライズにはpoppler-utils(pdftoppm/pdfinfo)が必要です(Windows版インストーラーに同梱済み)。<br />
+          Note: rendering PDFs currently requires poppler-utils (pdftoppm/pdfinfo) — it is bundled with the Windows installer.
+        </p>
+        <hr />
+        <button id="rebind-pdfs-btn">選択したPDFの綴じ方向を一括変換して保存(ページ順序を反転) / Bulk-convert selected PDFs' binding direction (reverses page order) and save</button>
+        <p class="hint">
+          元のPDFはそのまま保持し、出力先フォルダへ「元のファイル名-rebind.pdf」として別名保存します。PDF自体(画像化せず)を編集するため、スキャナ出力等の単純な構造のPDFのみ対応します。<br />
+          The original PDF is left untouched; the result is saved as "&lt;original filename&gt;-rebind.pdf" in the output folder. This edits the PDF itself (no rasterization), so it only supports simple, flat page-tree PDFs such as scanner output.
+        </p>
+      </section>
+
+      <section>
+        <h2>5. ISOイメージ出力</h2>
+        <label><input type="checkbox" id="output-iso" /> 選択した音声/動画をISOイメージとして出力する</label>
+      </section>
+
+      <section>
+        <h2>6. ディスクへの書き込み(複数種別を同時選択可)</h2>
+        <div class="checkbox-grid">
+          <label><input type="checkbox" name="disc-type" value="cd700" /> CD (700MB)</label>
+          <label><input type="checkbox" name="disc-type" value="dvd47" /> DVD 1層 (4.7GB)</label>
+          <label><input type="checkbox" name="disc-type" value="dvd_dl85" /> DVD 2層 DL (8.5GB)</label>
+          <label><input type="checkbox" name="disc-type" value="bd25" /> Blu-ray (25GB)</label>
+          <label><input type="checkbox" name="disc-type" value="bd50" /> Blu-ray DL (50GB)</label>
+          <label><input type="checkbox" name="disc-type" value="bd100" /> Blu-ray 3層/BDXL TL (100GB)</label>
+          <label><input type="checkbox" name="disc-type" value="bd128" /> Blu-ray 4層/BDXL QL (128GB)</label>
+        </div>
+        <p class="hint">チェックした種別ごとに、その容量に合わせたISO/書き込みを行います。出力がディスク容量に収まらない種別は、書き込みを飛ばして理由を表示します。</p>
+
+        <h3>アップコンバートしてディスクいっぱいに収める / Upconvert and fill the disc</h3>
+        <div class="row" style="flex-wrap:wrap;align-items:center">
+          <label>書き込むディスク / Disc:
+            <select id="upconv-disc">
+              <option value="dvd47">DVD 1層 (4.7GB)</option>
+              <option value="dvd_dl85">DVD 2層 (8.5GB)</option>
+              <option value="bd25" selected>Blu-ray 1層 (25GB)</option>
+              <option value="bd50">Blu-ray 2層 (50GB)</option>
+              <option value="bd100">Blu-ray 3層 (100GB)</option>
+              <option value="bd128">Blu-ray 4層 (128GB)</option>
+            </select>
+          </label>
+          <label><input type="radio" name="upconv-res" value="1920x1080" checked /> フルHD / Full HD (1920×1080)</label>
+          <label><input type="radio" name="upconv-res" value="3840x2160" /> 4K (3840×2160)</label>
+          <label><input type="checkbox" id="upconv-ai" checked /> AI超解像を使う(4.3) / Use AI super-resolution (4.3)</label>
+          <label>fps:
+            <select id="upconv-fps">
+              <option value="0" selected>元のまま / Original</option>
+              <option value="60">60</option>
+              <option value="120">120</option>
+            </select>
+          </label>
+          <button id="upconv-apply-btn" type="button">この設定にする / Apply</button>
+          <button id="upconv-fit-btn" type="button">収まるか予測 / Predict fit</button>
+        </div>
+        <div id="upconv-fit-result" class="hint"></div>
+        <p class="hint">
+          動画(MKV、H.264+AAC)を選んだ解像度へ拡大し、選んだディスクの容量いっぱいになるビットレートを、全ソースの合計の長さから自動で計算します(音声の分も差し引きます)。ISO作成も同時に設定します。
+          画質がそれ以上上がらない上限(フルHD 40Mbps=Blu-ray規格の上限、4K 100Mbps=Ultra HD Blu-rayの上限)に達した場合は、その値で止めて空き容量が残る旨を表示します。
+          ※DVDへのフルHD・4Kは、DVD-Video規格外のデータディスクになるため、家庭用DVDプレイヤーでは再生できない場合があります。<br />
+          Scales video (MKV, H.264+AAC) to the chosen resolution and computes, from the total length of all sources, the bitrate that fills the chosen disc (audio is subtracted). ISO output is also enabled.
+          If the ceiling beyond which quality no longer improves is reached (Full HD 40 Mbps = Blu-ray limit, 4K 100 Mbps = Ultra HD Blu-ray limit), it stops there and reports the free space left.
+          Full HD / 4K on DVD is a data disc outside DVD-Video and may not play on set-top DVD players.
+        </p>
+        <p class="hint"><b>拡大の方法: 「AI超解像を使う」がオンなら学習済みニューラルネットで細部を補い、オフなら補間による拡大です。</b>4K 120FPSはRIFEによる補間で、ディスクに収まるかは「収まるか予測」で確認できます。<br />
+          <b>How it scales: with "Use AI super-resolution" on, a trained neural network restores detail; off, it is plain interpolation.</b> 4K 120 FPS uses RIFE interpolation; use "Predict fit" to see whether it fits the disc.</p>
+
+        <h3>SACD/Blu-rayオーディオ風プリセット / SACD- and Blu-ray-Audio-style preset</h3>
+        <button id="preset-hires-disc-btn" type="button">DSD256 + ISOを一括設定(PCMは付けない) / Set DSD256 + ISO (no PCM)</button>
+        <p class="hint">
+          音声・音楽だけ、または映像+音声の**音声部分**(ミックスダウン)をDSDと高解像度PCMに変換し、ISOにまとめてDVD(1層/2層)・BD(1〜4層)向けのディスクイメージにします。映像はビデオ形式(4)を別に選べば、同じディスクへ映像ファイルとして収録されます。<br />
+          <b>注意: これは標準のSACD規格ディスクでも、Blu-ray Audio(Pure Audio BD)規格ディスクでもありません</b>(SACDは独自の暗号化・認定オーサリングが必要で作れません。Pure Audio BDは192kHz/24bitまでで、384kHz/32bitは規格外です)。DSF/WAV/FLACファイルを収めたデータディスクなので、PC・ネットワークプレーヤー・対応機器で再生でき、家庭用のプレーヤーでは再生できない場合があります。<br />
+          Converts the <b>audio part</b> (mixed down) of audio-only or video sources to DSD and high-resolution PCM and packs them into an ISO for DVD (single/dual layer) and BD (1–4 layer) images. Pick a video format in (4) to also include the video as files on the same disc.<br />
+          <b>Note: this is neither a standard SACD disc nor a Blu-ray Audio (Pure Audio BD) disc</b> (SACD needs proprietary encryption and licensed authoring; Pure Audio BD stops at 192 kHz/24-bit, so 384 kHz/32-bit is outside the spec). It is a data disc of DSF/WAV/FLAC files that plays on PCs, network players and capable devices, but may not play on set-top players.
+        </p>
+
+        <h3>書き込み速度</h3>
+        <select id="write-speed-mode">
+          <option value="auto">自動判定</option>
+          <option value="max">最高速</option>
+          <option value="fixed">速度を指定</option>
+        </select>
+        <input id="write-speed-fixed" type="number" min="1" placeholder="倍速 (例: 8)" style="display:none" />
+      </section>
+
+      <section>
+        <h2>7. ビットレート</h2>
+        <label><input type="radio" name="bitrate-mode" value="fixed" checked /> 固定ビットレート</label>
+        <input id="bitrate-fixed" type="number" min="1" value="192" /> kbps
+        <br />
+        <label><input type="radio" name="bitrate-mode" value="auto" /> ディスク容量から自動で最大ビットレートを算出(ディスク種別を選択時)</label>
+        <br />
+        <label>
+          <input type="radio" name="bitrate-mode" value="max_quality" />
+          最高音質・最高画質で記録する(音声/動画フォーマット未選択でも可——未選択時はMP4などの動画をCDのISOに変換する場合は、自動でロスレスWAVでかつISO同時変換化)
+          <br />Record at maximum audio &amp; video quality (works even with no format checked — e.g. converting a video like MP4 to a CD ISO with no format checked automatically uses lossless WAV and builds the ISO at the same time)
+        </label>
+        <p id="max-quality-estimate" class="hint" hidden></p>
+
+        <h3>見積もり(所要時間・空き容量・収まるか) / Estimate (time, free space, fit)</h3>
+        <p class="hint">
+          動画のAI超解像(4.3)専用だった「下調べ」「収まるか予測」を、CD取り込みや通常の音声変換にも
+          使えるようにしたものです。上の設定(ビットレート・音声フォーマット)と、6.で選んだディスク種別を
+          もとに、全ソースの合計時間から必要な容量・収まるかを判定します。 / Previously limited to video AI
+          upscaling (4.3), this estimate now also works for CD ripping and ordinary audio conversion. Using the
+          settings above and the disc type(s) chosen in 6., it computes the required size (and whether it fits)
+          from the total duration of all sources.
+        </p>
+        <button id="estimate-audio-fit-btn" type="button">見積もりを実行 / Run estimate</button>
+        <pre id="estimate-audio-fit-result" class="hint"></pre>
+      </section>
+
+      <section>
+        <h2>7.5. 再生規格の上限(kHz・ビットレート)に収める / Fit within a playback standard's maximum (kHz &amp; bitrate)</h2>
+        <select id="playback-spec"></select>
+        <p id="playback-spec-detail" class="hint"></p>
+        <p class="hint">選んだ規格の最大サンプリング周波数・ビット深度・ビットレートを超えないように変換します(元がそれ以下ならそのまま。アップサンプリングはしません)。上限を超える高解像度PCM/DSDの形式は、家庭用プレーヤーの規格外である旨を表示します。 / Converts so the chosen standard's maximum sample rate, bit depth and bitrate are not exceeded (sources already below are left as is; no upsampling). High-res PCM/DSD formats above the limit are reported as outside the player standard.</p>
+      </section>
+
+      <section>
+        <h2>8. 時間指定・トリミング(区間カット)</h2>
+        <p class="hint">
+          時間・区間の指定は、この8.にまとめてあります(以前は7.5と8.に分かれていて分かりにくかったため、
+          2026-09-28にここへ統合しました)。全ファイルまとめて先頭から機械的に切るだけでよいなら
+          <b>8.1</b>、動画/音声を見ながら・聞きながら、途中の不要な部分だけをマウスや時:分:秒で
+          精密に指定したいなら<b>8.2</b>を使ってください(両方を同じファイルに使うと8.2が優先されます)。<br />
+          Every time/range input now lives here in section 8 (previously split across 7.5 and 8, which
+          was confusing — consolidated 2026-09-28). Use <b>8.1</b> to mechanically keep just the start of
+          every file; use <b>8.2</b> to precisely mark unwanted parts anywhere in a file while watching/
+          listening, or by typing h:m:s (8.2 takes priority if both are set for the same file).
+        </p>
+
+        <h3>8.1. 全ファイル一括: 先頭から◯◯だけ残す / All files at once: keep only the first ◯◯</h3>
+        <p class="hint">
+          元データをサイズでカットするか、時間でカットするかを、それぞれYES/NOで選びます。<br />
+          Answer YES/NO for cutting the source by size and by time.
+        </p>
+        <div>元データをサイズでカットする？ / Cut the source by size?
+          <label><input type="radio" name="cut-by-size" value="yes" checked /> YES</label>
+          <label><input type="radio" name="cut-by-size" value="no" /> NO</label>
+          — 1ファイルあたり / per file: <input id="cut-size-mb" type="number" min="1" placeholder="例: 700" style="width:8em" /> MB(先頭から / from the start)
+        </div>
+        <div>元データを時間でカットする？ / Cut the source by time?
+          <label><input type="radio" name="cut-by-time" value="yes" /> YES</label>
+          <label><input type="radio" name="cut-by-time" value="no" checked /> NO</label>
+          — <input id="cut-time-h" type="number" min="0" value="0" style="width:3.5em" />時
+          <input id="cut-time-m" type="number" min="0" value="0" style="width:3.5em" />分
+          <input id="cut-time-s" type="number" min="0" value="0" style="width:3.5em" />秒(先頭から / from the start)
+        </div>
+        <p class="hint">サイズと時間は必ずどちらか一方だけがYESです(片方をYESにするともう片方はNO、NOにするともう片方がYESになります。既定はサイズ)。数値が空欄なら、そのファイルはカットしません。 / Exactly one of size/time is YES (switching one flips the other; size is the default). If the value is left blank, nothing is cut.</p>
+        <p class="hint">サイズでカットする場合は、元データのサイズを基準に、指定サイズに収まる長さだけを先頭から残します。8.2で手動のカット区間を指定したファイルは変更しません。 / Cutting by size keeps only as much from the start as fits the given size of the source data. Files with manual cut ranges (8.2) are left untouched.</p>
+
+        <h4>後処理 / Post-processing</h4>
+        <label><input type="checkbox" id="fill-disc" /> ディスクいっぱいに収める(6.で選んだCD / DVD 1〜2層 / Blu-ray 1〜4層の容量に合わせてビットレートを自動調整) / Fill the disc (auto-adjust bitrate to the CD / DVD 1–2 layer / Blu-ray 1–4 layer chosen in section 6)</label>
+        <br />
+        <label><input type="checkbox" id="ai-auto-cut" /> AI判断で無音部分を自動カット / AI-judged auto-cut of silent parts</label>
+        <p class="hint">
+          ※「AI判断」はffmpegの無音検出(音量ベース)による近似です。実際の意味的なシーン解析は行いません。<br />
+          Note: "AI-judged" is an approximation using ffmpeg's volume-based silence detection — it does not perform true semantic scene analysis.
+        </p>
+
+        <h3>8.2. ファイルごとの精密カット(個別編集) / Per-file precise cutting (individual edit)</h3>
+        <p class="hint">
+          各ファイルの「編集...」から、カットしたい区間(最初・途中・最後、いくつでも)を
+          動画を再生して見ながらマウスで、または時:分:秒を直接数字で入力して指定できます。
+          動画は再生し続ける必要はなく、シーク(早送り位置指定)だけで確認できます。
+        </p>
+        <label>編集するファイル / File to edit:
+          <select id="cut-target"></select>
+        </label>
+        <p id="cut-empty" class="hint">先に「1.」でファイルを追加してください。 / Add files in section 1 first.</p>
+        <div id="cut-editor-host"></div>
+      </section>
+
+      <section>
+        <h2>8.5. 複数ファイルの合成・分割編集 / Composite &amp; split editing across multiple files</h2>
+        <p class="hint">
+          ソースの音声/動画ファイルを選択した順に結合(合成)したり、1本の長い動画/音声を
+          等間隔またはサイズ指定で複数ファイルに分割したりできます(静止画・PDFの合成は
+          「4.5」のPDF見開き変換を参照)。<br />
+          Concatenate the source audio/video files (in list order) into one, or split one long
+          file into multiple parts at equal intervals or by target size (image/PDF compositing
+          is handled separately in section 4.5).
+        </p>
+        <button id="concat-btn">選択した順に結合(合成)して1つの出力にする / Concatenate in list order into one file</button>
+
+        <h3>分割(1つのファイルを、複数のファイルに分ける) / Split (cut one file into several files)</h3>
+        <label><input type="radio" name="split-mode" value="equal" checked /> 同じ長さに分ける:  <input id="split-equal-count" type="number" min="0" value="2" style="width:5em" /> 個のファイルに(0=分割しない、▲で0の次は2) / Equal parts: into <i>N</i> files (0 = no split; the up arrow goes 0 → 2)</label>
+        <br />
+        <label><input type="radio" name="split-mode" value="size" /> 大きさで分ける: 1ファイルあたり約 <input id="split-size-mb" type="number" min="1" placeholder="例: 700" style="width:7em" /> MB ずつ / By size: about <i>N</i> MB per file</label>
+        <br />
+        <label><input type="checkbox" id="split-remainder-disk-fit" checked /> 最後に余った短い部分は、選んだディスク(6.で選択)の容量いっぱいになるよう、ビットレートを自動で上げる / Raise the bitrate of the short last piece so it fills the disc chosen in section 6</label>
+        <br />
+        <button id="split-btn">先頭のファイルを分割して保存 / Split the first file and save</button>
+        <p class="hint">分割されるのは、ソース一覧の先頭にある音声・動画ファイル1本だけです。個数は0(分割しない)または2以上です。1は「分けない」と同じなので飛ばし、▲▼で0と2の間を移動します。「大きさで分ける」で、ファイル全体が指定サイズ以下のときも分割されません。 / Only the first audio/video file in the source list is split. The count is 0 (no split) or 2 and up; 1 would mean the same as not splitting, so the arrows skip it (0 ↔ 2). With "by size", a file already at or below the size is not split either.</p>
+      </section>
+
+      <section>
+        <button id="run-btn" class="primary">実行</button>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
