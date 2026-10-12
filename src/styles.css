@@ -253,3 +253,16 @@ button:focus-visible { background: #e3f2fd; }
   body { font-size: 20px; }
   button, select, input[type="text"] { min-height: 56px; font-size: 20px; }
 }
+
+/* ── 使いやすさ(ux.js) ── */
+.tabbar { position: sticky; top: 0; z-index: 10; display: flex; gap: .25rem; padding: .4rem 0; margin: .5rem 0; background: Canvas; border-bottom: 2px solid rgba(128,128,128,.35); }
+.tabbar button { flex: 1; padding: .7rem .5rem; font-size: 1rem; border: 1px solid transparent; border-radius: 8px 8px 0 0; background: rgba(128,128,128,.12); cursor: pointer; }
+.tabbar button[aria-selected="true"] { background: #1e88e5; color: #fff; font-weight: 700; }
+section[hidden] { display: none !important; }
+p.hint.folded { max-height: 3.2em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+button.more { border: 0; background: none; color: #1e88e5; padding: .1rem 0; cursor: pointer; font-size: .85rem; }
+/* 長い選択肢の欄が画面の横幅をはみ出さないようにする */
+select, input[type="text"], input:not([type]) { max-width: 100%; box-sizing: border-box; }
+label { max-width: 100%; }
+/* 隠れている説明文(スマホ等で使えない機能)の「詳細」ボタンも隠す */
+p.hint[style*="display: none"] + button.more { display: none; }

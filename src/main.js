@@ -2397,3 +2397,14 @@ document.getElementById("preset-hires-disc-btn").addEventListener("click", () =>
   document.getElementById("output-iso").checked = true;
   log("プリセットを設定しました: DSD256 + ISO(PCMは付けません)。書き込むディスク種別(6)を選び、実行してください。 / Preset applied: DSD256 + ISO (no PCM). Pick the disc types (6) and run.");
 });
+
+// ux.js(ドラッグ&ドロップ)から呼ぶ入口。
+window.openMedia = {
+  addSources(paths) {
+    for (const path of paths) sourceFiles.push({ path, cutRanges: [], frameAccurate: false, includeAsIs: defaultIncludeAsIs(path) });
+    renderFileList();
+  },
+  play(path) {
+    playOne(path, () => playItem({ kind: "file", paths: [path], label: path }, ""));
+  },
+};
