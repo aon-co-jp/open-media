@@ -33,6 +33,16 @@
         <p id="player-mode-desc" class="hint"></p>
         <p id="player-mqa" class="hint"></p>
         <div class="row">
+          <label>映像のアップコンバート(DVD/MP4/MKV等) / Video upconvert:
+            <select id="player-vres">
+              <option value="1080" selected>Full HD(1080p)まで(既定) / up to Full HD (default)</option>
+              <option value="2160">4K(2160p)まで / up to 4K</option>
+              <option value="0">しない(元の解像度) / off (original)</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint">元の映像が目標より低いときだけ、高品質のlanczos補間で引き上げます(高い映像は縮めません)。補間であり、失われた細部を復元するAI超解像ではありません(AI超解像は「4.3」の変換機能で行えます)。音声は映像と別に取り出し、open-barエンジンでアップサンプリングしながら再生します。4Kは変換に時間がかかります。 / Only video below the target is enlarged, with a high-quality lanczos filter (larger video is never shrunk). This is interpolation, not AI super-resolution that restores detail (use section 4.3 for that). Audio is extracted separately and played through the open-bar engine with upsampling. 4K takes longer to convert.</p>
+        <div class="row">
           <button id="player-pause-btn" disabled>⏸ 一時停止 / Pause</button>
           <button id="player-stop-btn" disabled>■ 停止 / Stop</button>
           <input id="player-seek" type="range" min="0" max="0" step="0.1" value="0" disabled style="flex:1" />

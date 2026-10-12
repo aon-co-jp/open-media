@@ -111,16 +111,17 @@ fn walk(dir: &Path, depth: u32, out: &mut Vec<DiscItem>) {
 }
 
 /// 再生できる形のファイルを返す。ブラウザで再生できる単一ファイルはそのまま、他はMP4/WAVへ変換する。
-pub fn prepare(paths: &[String], video_hint: bool) -> Result<String, String> {
+pub fn prepare(paths: &[String], video_hint: bool, target_height: Option<u32>) -> Result<String, String> {
     let first = paths.first().ok_or("再生する項目がありません")?;
     let ext = Path::new(first).extension().and_then(|x| x.to_str()).unwrap_or("").to_lowercase();
-    if paths.len() == 1 && BROWSER_OK.contains(&ext.as_str()) {
+    // 映像は、解像度の引き上げ(アップコンバート)を頼まれたときは必ず変換経由にする。
+    if paths.len() == 1 && BROWSER_OK.contains(&ext.as_str()) && (!video_hint || target_height.is_none()) {
         return Ok(first.clone());
     }
     let dir = std::env::temp_dir().join("make-disk-player");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let mut h = std::collections::hash_map::DefaultHasher::new();
-    std::hash::Hash::hash(&paths, &mut h);
+    std::hash::Hash::hash(&(paths, target_height), &mut h);
     let key = std::hash::Hasher::finish(&h);
     let e = if video_hint { "mp4" } else { "wav" };
     let out = dir.join(format!("disc-{key:x}.{e}"));
@@ -131,7 +132,12 @@ pub fn prepare(paths: &[String], video_hint: bool) -> Result<String, String> {
     let mut cmd = crate::engine::sidecar::resolve_tool("ffmpeg");
     cmd.args(["-y", "-hide_banner", "-v", "error", "-i", &input]);
     if video_hint {
-        cmd.args(["-vf", "yadif=deint=interlaced,format=yuv420p", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"]);
+        // 元の高さが目標より低いときだけlanczosで引き上げる(高い映像は縮めない)。補間であり、失われた細部の復元ではない。
+        let vf = match target_height {
+            Some(h) => format!("yadif=deint=interlaced,scale=w=-2:h='max(ih,{h})':flags=lanczos,format=yuv420p"),
+            None => "yadif=deint=interlaced,format=yuv420p".to_string(),
+        };
+        cmd.args(["-vf", vf.as_str(), "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"]);
     } else {
         cmd.args(["-vn", "-c:a", "pcm_s24le"]);
     }

@@ -618,7 +618,7 @@ async function pollBar() {
   setTimeout(pollBar, 250);
 }
 
-async function startBar(path) {
+async function startBar(path, allowFallback = true) {
   const mode = document.getElementById("player-mode").value;
   const treble = document.getElementById("player-treble").checked;
   const mqa = await invoke("bar_is_mqa", { path }).catch(() => false);
@@ -628,8 +628,9 @@ async function startBar(path) {
   try {
     await invoke("bar_play", { path, mode, treble });
   } catch (e) {
+    if (!allowFallback) throw e;
     // open-barが使えない環境(Android/iOS、音声デバイスが開けない等)では、WebViewの再生へ縮退する。
-    const ready = await invoke("prepare_disc_item_for_playback", { paths: [path], video: false });
+    const ready = await invoke("prepare_disc_item_for_playback", { paths: [path], video: false, targetHeight: null });
     playerMedia.style.display = "";
     playerMedia.muted = false;
     playerMedia.src = convertFileSrc(ready);
@@ -666,7 +667,7 @@ async function playItem(item, drive) {
   } else if (item.kind === "combo") {
     comboOffsetMs = item.audio_offset_ms || 0;
     comboActive = true;
-    const ready = await invoke("prepare_disc_item_for_playback", { paths: [item.video], video: true });
+    const ready = await invoke("prepare_disc_item_for_playback", { paths: [item.video], video: true, targetHeight: videoTargetHeight() });
     playerMedia.style.display = "";
     playerMedia.muted = true; // 映像内蔵の音声は使わない(別音声が主)
     playerMedia.src = convertFileSrc(ready);
@@ -675,12 +676,31 @@ async function playItem(item, drive) {
   } else if (item.kind === "file" && !VIDEO_RE.test(item.paths[0])) {
     await startBar(item.paths[0]); // 音声ファイル(DSDを含む)はopen-bar
   } else {
-    const ready = await invoke("prepare_disc_item_for_playback", { paths: item.paths, video: true });
+    // 映像(DVD/Blu-ray/MP4/MKV等): 映像は引き上げて消音で表示し、音声は別に取り出してopen-barでアップサンプリング再生する。
+    // 音声を時間の基準(組み合わせ再生と同じ仕組み)に映像を追従させる。
+    const ready = await invoke("prepare_disc_item_for_playback", { paths: item.paths, video: true, targetHeight: videoTargetHeight() });
     playerMedia.style.display = "";
-    playerMedia.muted = false;
     playerMedia.src = convertFileSrc(ready);
-    await playerMedia.play();
+    let audioPath = null;
+    try {
+      audioPath = await invoke("prepare_disc_item_for_playback", { paths: item.paths, video: false, targetHeight: null });
+      comboOffsetMs = 0;
+      comboActive = true;
+      playerMedia.muted = true;
+      await startBar(audioPath, false);
+    } catch (e) {
+      // 音声エンジンを使えない/音声が無い場合は、映像プレーヤーの音で再生する。
+      comboActive = false;
+      playerMedia.muted = false;
+      playerRoute.textContent = `映像プレーヤーの音で再生 / Using the video player's own audio (${String(e).slice(0, 120)})`;
+    }
+    await playerMedia.play().catch(() => {});
   }
+}
+
+function videoTargetHeight() {
+  const h = Number(document.getElementById("player-vres").value);
+  return h > 0 ? h : null;
 }
 
 playBtn.addEventListener("click", () => {

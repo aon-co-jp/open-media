@@ -418,8 +418,8 @@ async fn list_disc_items(drive: String) -> Result<Vec<engine::disc_player::DiscI
 
 /// 再生用ファイルを用意する(ブラウザ非対応形式はMP4/WAVへ変換)。
 #[tauri::command]
-async fn prepare_disc_item_for_playback(paths: Vec<String>, video: bool) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || engine::disc_player::prepare(&paths, video)).await.map_err(|e| e.to_string())?
+async fn prepare_disc_item_for_playback(paths: Vec<String>, video: bool, target_height: Option<u32>) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || engine::disc_player::prepare(&paths, video, target_height)).await.map_err(|e| e.to_string())?
 }
 
 /// 再生のアップサンプリング先レートをaruaru-llmに判断させる(失敗時は整数倍の規則)。

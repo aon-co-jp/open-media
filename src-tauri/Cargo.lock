@@ -2625,32 +2625,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "make-disk"
-version = "0.1.32"
-dependencies = [
- "image",
- "lopdf",
- "open-bar",
- "open-cpu",
- "open-mqa",
- "ort",
- "rustfft",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-android-folder",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tauri-plugin-shell",
- "tauri-plugin-updater",
- "tract-onnx",
- "ureq",
- "zip",
-]
-
-[[package]]
 name = "maplit"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3293,6 +3267,32 @@ dependencies = [
 name = "open-cpu"
 version = "0.1.0"
 source = "git+https://github.com/aon-co-jp/open-cpu#b2319a069c54d66499830cedcc370c033965f928"
+
+[[package]]
+name = "open-media"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "lopdf",
+ "open-bar",
+ "open-cpu",
+ "open-mqa",
+ "ort",
+ "rustfft",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-android-folder",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-shell",
+ "tauri-plugin-updater",
+ "tract-onnx",
+ "ureq",
+ "zip",
+]
 
 [[package]]
 name = "open-mqa"
