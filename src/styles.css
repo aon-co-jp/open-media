@@ -241,3 +241,15 @@ input[type="number"] {
     min-width: 6rem;
   }
 }
+
+/* リモコン/キーボード操作(Android TV・十字キー)用: 今どこにフォーカスがあるかを大きく分かりやすく見せる */
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 4px solid #1e88e5;
+  outline-offset: 2px;
+}
+button:focus-visible { background: #e3f2fd; }
+@media (pointer: coarse) and (min-width: 1000px) {
+  /* TVのような大画面・非タッチ: 文字とボタンを大きくする */
+  body { font-size: 20px; }
+  button, select, input[type="text"] { min-height: 56px; font-size: 20px; }
+}
