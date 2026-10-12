@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">"make-disk"</string>
-    <string name="main_activity_title">"make-disk"</string>
+    <string name="app_name">"open-media"</string>
+    <string name="main_activity_title">"open-media"</string>
 </resources>

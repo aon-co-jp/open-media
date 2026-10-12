@@ -14,10 +14,10 @@ CD / DVD / Blu-ray の書き込み・音声/動画の変換・ISO作成(make-dis
 
 | 環境 | ファイル |
 |---|---|
-| Windows | `open-media_0.1.3_x64-setup.exe` / `.msi` |
-| macOS (Apple Silicon / Intel) | `open-media_0.1.3_aarch64.dmg` / `open-media_0.1.3_x64.dmg` |
+| Windows | `open-media_0.1.4_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.4_aarch64.dmg` / `open-media_0.1.4_x64.dmg` |
 | Linux | `.deb` / `.rpm` / `.AppImage` |
-| Android(スマホ・タブレット共通) | `open-media_0.1.3_android-universal.apk`(未署名、サイドロード) |
+| Android(スマホ・タブレット共通) | `open-media_0.1.4_android-universal.apk`(未署名、サイドロード) |
 
 ## できること
 
@@ -38,11 +38,11 @@ CD / DVD / Blu-ray の書き込み・音声/動画の変換・ISO作成(make-dis
 
 ## 現状と既知の制限(正直な開示)
 
-- **実際のディスクを入れた再生は、まだ通しで確認していません**(CD / DVD / Blu-ray)。ビルドとエンジン単体の確認までです。
+- **音楽CDの再生は実機で確認済み**(Windows。トラックの読み取り→排他モード+アップサンプル 44.1→352.8 kHz+32bit、音切れ0)。**DVD / Blu-rayの実ディスクでの再生は未確認**です(変換処理は合成データで確認)。
 - コピーガード付きの市販ディスクは読めません(保護の回避は行いません)。
 - DVD / Blu-ray の映像はブラウザで直接再生できないため、MP4へ変換してから再生します。長い本編は待ち時間があります。
 - 排他モード・DoP は Windows のみです。macOS / Linux / Android では共有モードまたは映像プレーヤー経由の再生になります。音楽CDの取り込み・再生も Windows のみです。
-- 検証状況: Windows は実機でビルド。Linux(Ubuntu)と Android(arm64)はコンパイルまで確認。macOS は未確認(GitHub Actions でビルドされますが、実機では動かしていません)。
+- 検証状況: Windows は実機でインストール・起動・アンインストール、CD再生、システム音声の橋渡し(DAC: Loxjie D40 Pro 相当で384 kHz/32bit)を確認。Linux(Ubuntu、WSL)はインストールと起動まで。Android は実機(Android 14)でMP4/FLACの再生まで。macOS は未確認(GitHub Actions でビルドされますが、実機では動かしていません)。
 - 自動アップデートは未設定です(次の版で対応予定)。
 - ライセンス: MIT(各依存クレートのライセンスは個別に従います)。
 

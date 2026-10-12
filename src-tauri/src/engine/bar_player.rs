@@ -114,4 +114,32 @@ mod tests {
         stop();
         assert!(!is_mqa(wav.to_str().unwrap()));
     }
+
+    /// 実機テスト(音楽CDが入った光学ドライブ D: が必要): CDのTOCを読み、1曲を取り込み、
+    /// 排他モード+高品質アップサンプル+32bitで再生して、位置が進み出力レートが上がることを確かめる。
+    /// `cargo test --lib real_cd -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn real_cd_plays_via_exclusive_upsample_32bit() {
+        let drive = std::env::var("OPEN_MEDIA_CD").unwrap_or_else(|_| "D:".to_string());
+        let tracks = crate::engine::cdda::list_tracks(&drive).expect("TOCを読めない");
+        println!("tracks: {}", tracks.iter().filter(|t| t.is_audio).count());
+        let first = tracks.iter().find(|t| t.is_audio).expect("音声トラックが無い");
+        let dir = std::env::temp_dir().join("md_cd_test");
+        let outs = crate::engine::cdda::rip_tracks(&drive, &[first.number], &dir, false).expect("取り込めない");
+        println!("ripped: {} ({} bytes)", outs[0], std::fs::metadata(&outs[0]).map(|m| m.len()).unwrap_or(0));
+        play(&outs[0], "exclusive_upsample", false, false, 32).unwrap();
+        set_volume(0.3);
+        let t0 = std::time::Instant::now();
+        while status().position_secs < 2.0 && t0.elapsed().as_secs() < 40 {
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        }
+        let st = status();
+        println!("state={:?} pos={:.2} dur={:.1} src={}Hz out={}Hz mode={} route={} note={} msg={} underruns={}", st.state, st.position_secs, st.duration_secs, st.source_rate_hz, st.out_rate_hz, st.active_mode.id, st.route_en, st.note, st.message, st.underrun_frames);
+        stop();
+        assert!(st.position_secs >= 2.0, "再生が進まない");
+        assert_eq!(st.source_rate_hz, 44_100);
+        assert!(st.out_rate_hz > 44_100, "アップサンプルされていない");
+        assert_eq!(st.underrun_frames, 0, "音切れ");
+    }
 }

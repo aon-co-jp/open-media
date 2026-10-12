@@ -14,10 +14,10 @@ Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
 
 | Platform | File |
 |---|---|
-| Windows | `open-media_0.1.3_x64-setup.exe` / `.msi` |
-| macOS (Apple Silicon / Intel) | `open-media_0.1.3_aarch64.dmg` / `open-media_0.1.3_x64.dmg` |
+| Windows | `open-media_0.1.4_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.4_aarch64.dmg` / `open-media_0.1.4_x64.dmg` |
 | Linux | `.deb` / `.rpm` / `.AppImage` |
-| Android (phones and tablets) | `open-media_0.1.3_android-universal.apk` (unsigned, sideload) |
+| Android (phones and tablets) | `open-media_0.1.4_android-universal.apk` (unsigned, sideload) |
 
 ## Features
 
@@ -38,11 +38,11 @@ Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
 
 ## Status and known limitations (honest disclosure)
 
-- **Playback with a real disc inserted (CD / DVD / Blu-ray) has not been verified end to end yet.** Only builds and engine-level checks were done.
+- **Audio-CD playback is verified on real hardware** (Windows: track read → exclusive mode + upsampling 44.1→352.8 kHz + 32-bit, zero underruns). **Real DVD / Blu-ray discs are not verified yet** (the conversion step was checked with synthetic data).
 - Copy-protected commercial discs cannot be read (no protection is circumvented).
 - DVD / Blu-ray video cannot be played directly in the browser engine, so it is converted to MP4 first. Long titles take a while.
 - Exclusive mode and DoP are Windows-only. On macOS / Linux / Android playback uses shared mode or the video player. Audio-CD ripping and playback are Windows-only.
-- Verification: Windows built on a real machine. Linux (Ubuntu) and Android (arm64) were compile-checked only. macOS is unverified (it is built by GitHub Actions but was not run on hardware).
+- Verification: Windows install / launch / uninstall, CD playback and the system-audio bridge (DAC: a Loxjie D40 Pro-class device at 384 kHz / 32-bit) checked on real hardware. Linux (Ubuntu on WSL) checked up to install and launch. Android checked on a real device (Android 14) up to MP4 / FLAC playback. macOS is unverified (built by GitHub Actions but never run on hardware).
 - Auto-update is not configured yet (planned for the next release).
 - License: MIT (dependencies keep their own licenses).
 
