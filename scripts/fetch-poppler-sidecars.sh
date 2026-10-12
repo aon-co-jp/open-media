@@ -29,5 +29,8 @@ BIN=$(dirname "$(find "$TMP" -iname pdftoppm.exe | head -1)")
 mkdir -p "$DEST/bin" "$DEST/share"
 cp "$BIN"/*.dll "$DEST/bin/"
 cp "$BIN/pdftoppm.exe" "$BIN/pdfinfo.exe" "$DEST/bin/"
-cp -r "$(dirname "$BIN")/share/poppler" "$DEST/share/poppler"
+# poppler-data(CJK用cMap等)の場所は版で違う(26.09以降は zipのルート直下 share/poppler、以前は Library/share/poppler)。
+SHARE=$(find "$TMP" -type d -path "*/share/poppler" | head -1)
+[ -n "$SHARE" ] || { echo "fetch-poppler-sidecars.sh: share/poppler not found in the zip" >&2; exit 1; }
+cp -r "$SHARE" "$DEST/share/poppler"
 echo "fetch-poppler-sidecars.sh: done"; find "$DEST" -type f | wc -l
