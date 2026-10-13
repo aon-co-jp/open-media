@@ -91,6 +91,23 @@
         <p class="hint">注意: 約0.3秒の遅延があるため、音楽向けです(動画では映像と音がずれます)。DRMで保護された音声(Netflix・U-NEXT・Prime Videoの映像など)は、受け取れず無音になることがあります。保護を外す処理は行いません。受け取る音はWindowsのミキサーの形式(多くは48 kHz)なので、元の音源より高い情報は増えません。高くなるのは出力のレートと精度です。 / Note: about 0.3 s of latency, so use it for music (video would drift out of sync). DRM-protected audio (e.g. Netflix, U-NEXT, Prime Video) may arrive silent; nothing is done to strip protection. The captured sound is in the Windows mixer format (often 48 kHz), so no information beyond the source is added; what improves is the output rate and precision.</p>
       </section>
 
+      <section id="assoc-section">
+        <h2>0.7. 関連付けと自動再生(Windows) / File associations &amp; AutoPlay (Windows)</h2>
+        <p class="hint">拡張子ごとに、いま開くアプリを確認できます。open-mediaを「開くアプリの候補」に登録し、既定にするかどうかはWindowsの設定画面で選びます(Windowsは既定のアプリの選択を保護していて、アプリからは強制できません)。CD・DVDを入れたときの自動再生は、下のボタンでopen-mediaを既定にできます。 / Shows which app currently opens each extension. Register open-media as a candidate, then pick the default in Windows settings (Windows protects the default-app choice, so an app cannot force it). The buttons below make open-media the AutoPlay action for audio CDs and DVDs.</p>
+        <div class="row">
+          <button id="autoplay-on-btn">CD・DVDを入れたらopen-mediaで開く / Open CDs &amp; DVDs with open-media</button>
+          <button id="autoplay-off-btn">解除 / Undo</button>
+        </div>
+        <p id="autoplay-status" class="hint"></p>
+        <div class="row">
+          <button id="assoc-check-btn">拡張子ごとのアプリを確認 / Check apps per extension</button>
+          <button id="assoc-register-btn">選んだ拡張子にopen-mediaを登録 / Register open-media for selected</button>
+          <button id="assoc-settings-btn">Windowsの既定アプリ設定を開く / Open Windows default-apps settings</button>
+        </div>
+        <table id="assoc-table" style="width:100%;border-collapse:collapse"></table>
+        <p id="assoc-status" class="hint"></p>
+      </section>
+
       <section>
         <h2>1. ソースファイル</h2>
         <button id="add-files-btn">ファイルを追加...</button>

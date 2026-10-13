@@ -2408,3 +2408,82 @@ window.openMedia = {
     playOne(path, () => playItem({ kind: "file", paths: [path], label: path }, ""));
   },
 };
+
+// ── 関連付けと自動再生(Windows) ─────────────────────────────
+const ASSOC_EXTS = ["mp3", "flac", "wav", "m4a", "aac", "ogg", "opus", "dsf", "dff", "mka", "mp4", "mkv", "avi", "mov", "webm", "mpg", "vob", "m2ts"];
+const assocTable = document.getElementById("assoc-table");
+const assocStatus = document.getElementById("assoc-status");
+const autoplayStatus = document.getElementById("autoplay-status");
+async function refreshAutoplay() {
+  try {
+    const on = await invoke("autoplay_status");
+    autoplayStatus.textContent = on ? "自動再生: 音楽CD・DVDはopen-mediaで開く設定になっています / AutoPlay: audio CDs and DVDs open with open-media" : "自動再生: 未設定(Windowsの既定の動作) / AutoPlay: not set (Windows default)";
+  } catch (e) { autoplayStatus.textContent = String(e); }
+}
+async function checkAssoc() {
+  assocStatus.textContent = "確認中... / Checking...";
+  try {
+    const rows = await invoke("assoc_list", { exts: ASSOC_EXTS });
+    assocTable.innerHTML = "<tr><th></th><th align=left>拡張子 / Ext</th><th align=left>いま開くアプリ / Current app</th><th align=left>open-media</th></tr>";
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      const state = r.is_default ? "既定 / default" : r.registered ? "候補に登録済み / registered" : "未登録 / not registered";
+      tr.innerHTML = `<td><input type="checkbox" data-ext="${r.ext}" ${r.registered ? "" : "checked"} /></td><td>.${r.ext}</td><td>${r.app}</td><td>${state}</td>`;
+      assocTable.appendChild(tr);
+    }
+    assocStatus.textContent = "登録したい拡張子にチェックを入れて「登録」を押してください。既定にする操作は「Windowsの既定アプリ設定を開く」から。 / Tick the extensions to register, then press Register. To make it the default, use the Windows settings button.";
+  } catch (e) { assocStatus.textContent = String(e); }
+}
+document.getElementById("assoc-check-btn").addEventListener("click", checkAssoc);
+document.getElementById("assoc-register-btn").addEventListener("click", async () => {
+  const exts = [...assocTable.querySelectorAll("input[data-ext]:checked")].map((c) => c.dataset.ext);
+  if (!exts.length) { assocStatus.textContent = "拡張子を選んでください / Select extensions first"; return; }
+  try {
+    const n = await invoke("assoc_register", { exts });
+    assocStatus.textContent = `${n}個の拡張子にopen-mediaを候補として登録しました。既定にするには「Windowsの既定アプリ設定を開く」で選んでください。 / Registered open-media as a candidate for ${n} extension(s). Pick it as default in the Windows settings.`;
+    await checkAssoc();
+  } catch (e) { assocStatus.textContent = `登録できません / Cannot register: ${e}`; }
+});
+document.getElementById("assoc-settings-btn").addEventListener("click", () => invoke("open_default_apps_settings").catch((e) => { assocStatus.textContent = String(e); }));
+document.getElementById("autoplay-on-btn").addEventListener("click", async () => {
+  try { await invoke("autoplay_enable"); } catch (e) { autoplayStatus.textContent = `設定できません / Cannot set: ${e}`; return; }
+  refreshAutoplay();
+});
+document.getElementById("autoplay-off-btn").addEventListener("click", async () => {
+  await invoke("autoplay_disable").catch(() => {});
+  refreshAutoplay();
+});
+(async () => {
+  // Windows以外(スマホ・Mac・Linux)では関連付けの欄を隠す
+  if (!/Windows/i.test(navigator.userAgent)) { document.getElementById("assoc-section").style.display = "none"; return; }
+  refreshAutoplay();
+  checkAssoc();
+})();
+
+// ── 起動時の引数: 自動再生(--play-disc D:\)やファイルを開く(open-media.exe "file") ──
+(async () => {
+  let args = [];
+  try { args = await invoke("startup_args"); } catch (_) { return; }
+  if (!args.length) return;
+  const show = window.__showTab; if (show) show("play");
+  const i = args.indexOf("--play-disc");
+  if (i >= 0 && args[i + 1]) {
+    const drive = args[i + 1].replace(/[\\\/]+$/, ""); // D:\ → D:
+    // ドライブを選んで読み込み、音楽CDなら1曲目を再生する
+    const sel = document.getElementById("player-drive");
+    await new Promise((r) => setTimeout(r, 600)); // 起動直後のデバイス一覧の読み込みを待つ
+    if (![...sel.options].some((o) => o.value === drive)) sel.add(new Option(drive, drive));
+    sel.value = drive;
+    document.getElementById("player-scan-btn").click();
+    for (let n = 0; n < 40; n++) { // 最大約12秒、曲の一覧が出るのを待つ
+      await new Promise((r) => setTimeout(r, 300));
+      const first = document.querySelector('#player-tracks input[name="player-track"]:not(:disabled)');
+      if (first) { first.checked = true; first.dispatchEvent(new Event("change")); document.getElementById("player-play-btn").click(); return; }
+    }
+    return;
+  }
+  const file = args.find((a) => !a.startsWith("--"));
+  if (file && window.openMedia && /\.(mp3|wav|flac|aac|m4a|ogg|opus|dsf|dff|mka|mp4|mkv|avi|mov|webm|mpg|mpeg|vob|m2ts|ts)$/i.test(file)) {
+    window.openMedia.play(file); // ファイルをopen-mediaで開いたとき: 再生
+  }
+})();

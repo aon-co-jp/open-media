@@ -2,6 +2,8 @@ pub mod ai_playback;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub mod bar_player;
 pub mod disc_player;
+pub mod autoplay;
+pub mod assoc;
 #[cfg(windows)]
 pub mod bridge;
 pub mod ai_range;

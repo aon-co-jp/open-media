@@ -3270,7 +3270,7 @@ source = "git+https://github.com/aon-co-jp/open-cpu#b2319a069c54d66499830cedcc37
 
 [[package]]
 name = "open-media"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "image",
  "lopdf",

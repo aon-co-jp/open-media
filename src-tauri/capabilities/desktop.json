@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "desktop",
+  "description": "デスクトップ限定: 自動アップデート(確認・ダウンロード・再起動)。Android/iOSはアップデータープラグインが無いので含めない。",
+  "windows": ["main"],
+  "platforms": ["macOS", "windows", "linux"],
+  "permissions": [
+    "updater:default",
+    "process:allow-restart",
+    "process:allow-exit"
+  ]
+}

@@ -404,6 +404,32 @@ fn bar_auto_pair(_folder: String) -> Vec<serde_json::Value> { vec![] }
 #[tauri::command]
 fn bar_save_combo(_video: String, _audio: String, _audio_offset_ms: i64, _out_path: String) -> Result<(), String> { Err(BAR_NA.into()) }
 
+/// 起動時の引数(自動再生から `--play-disc D:\` で起動されたときにJS側が読む)。
+#[tauri::command]
+fn startup_args() -> Vec<String> { std::env::args().skip(1).collect() }
+
+/// Windowsの自動再生にopen-mediaを登録して、音楽CD・DVDの既定にする(Windowsのみ、ユーザーの設定)。
+#[tauri::command]
+fn autoplay_enable() -> Result<String, String> { engine::autoplay::enable() }
+#[tauri::command]
+fn autoplay_disable() -> Result<(), String> { engine::autoplay::disable() }
+#[tauri::command]
+fn autoplay_status() -> bool { engine::autoplay::is_enabled() }
+
+/// 起動時の引数(自動再生から `--play-disc D:\` や、ファイルを開くときの `"file"` でJS側が読む)。
+
+/// Windowsの自動再生にopen-mediaを登録して、音楽CD・DVDの既定にする(Windowsのみ、ユーザーの設定)。
+
+/// ファイルの関連付け(Windows): 拡張子ごとに今のアプリを調べ、open-mediaを開くアプリの候補に登録する。
+#[tauri::command]
+fn assoc_list(exts: Vec<String>) -> Vec<engine::assoc::AssocInfo> { engine::assoc::list(&exts) }
+#[tauri::command]
+fn assoc_register(exts: Vec<String>) -> Result<usize, String> { engine::assoc::register(&exts) }
+#[tauri::command]
+fn assoc_unregister(exts: Vec<String>) { engine::assoc::unregister(&exts) }
+#[tauri::command]
+fn open_default_apps_settings() -> Result<(), String> { engine::assoc::open_default_apps_settings() }
+
 /// システム音声のアップサンプリング(ループバック橋渡し、Windowsのみ)。
 #[cfg(windows)]
 #[tauri::command]
@@ -540,6 +566,14 @@ pub fn run() {
             upsample_for_playback,
             ai_playback_rate,
             list_optical_drives,
+            startup_args,
+            autoplay_enable,
+            autoplay_disable,
+            autoplay_status,
+            assoc_list,
+            assoc_register,
+            assoc_unregister,
+            open_default_apps_settings,
             bridge_devices,
             bridge_start,
             bridge_stop,
