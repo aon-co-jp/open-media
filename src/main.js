@@ -2427,7 +2427,15 @@ window.openMedia = {
 };
 
 // ── 関連付けと自動再生(Windows) ─────────────────────────────
-const ASSOC_EXTS = ["mp3", "flac", "wav", "m4a", "aac", "ogg", "opus", "dsf", "dff", "mka", "mp4", "mkv", "avi", "mov", "webm", "mpg", "vob", "m2ts"];
+const ASSOC_EXTS = ["cda", "mp3", "flac", "wav", "m4a", "aac", "ogg", "opus", "dsf", "dff", "mka", "mp4", "mkv", "avi", "mov", "webm", "mpg", "vob", "ifo", "m2ts", "iso"];
+// 拡張子の意味(表に出す)。音楽CDの曲は、パソコンから見ると「Track01.cda」のような見かけのファイルになっている。
+const ASSOC_NOTES = {
+  cda: "音楽CDの曲(ディスク上の見かけのファイル) / audio CD track (a pointer, not a real file)",
+  vob: "DVDビデオの映像 / DVD-Video video",
+  ifo: "DVDビデオの管理情報 / DVD-Video index",
+  m2ts: "Blu-rayの映像 / Blu-ray video",
+  iso: "ディスクのイメージ / disc image",
+};
 const assocTable = document.getElementById("assoc-table");
 const assocStatus = document.getElementById("assoc-status");
 const autoplayStatus = document.getElementById("autoplay-status");
@@ -2445,7 +2453,8 @@ async function checkAssoc() {
     for (const r of rows) {
       const tr = document.createElement("tr");
       const state = r.is_default ? "既定 / default" : r.registered ? "候補に登録済み / registered" : "未登録 / not registered";
-      tr.innerHTML = `<td><input type="checkbox" data-ext="${r.ext}" ${r.registered ? "" : "checked"} /></td><td>.${r.ext}</td><td>${r.app}</td><td>${state}</td>`;
+      const note = ASSOC_NOTES[r.ext] ? ` <small style="opacity:.7">(${ASSOC_NOTES[r.ext]})</small>` : "";
+      tr.innerHTML = `<td><input type="checkbox" data-ext="${r.ext}" ${r.registered ? "" : "checked"} /></td><td>.${r.ext}${note}</td><td>${r.app}</td><td>${state}</td>`;
       assocTable.appendChild(tr);
     }
     assocStatus.textContent = "登録したい拡張子にチェックを入れて「登録」を押してください。既定にする操作は「Windowsの既定アプリ設定を開く」から。 / Tick the extensions to register, then press Register. To make it the default, use the Windows settings button.";
@@ -2483,9 +2492,10 @@ document.getElementById("autoplay-off-btn").addEventListener("click", async () =
   try { args = await invoke("startup_args"); } catch (_) { return; }
   if (!args.length) return;
   const show = window.__showTab; if (show) show("play");
+  const cda = args.find((a) => /\.cda$/i.test(a)); // 音楽CDの曲(D:\Track01.cda)を開いた → そのドライブのCDを再生
   const i = args.indexOf("--play-disc");
-  if (i >= 0 && args[i + 1]) {
-    const drive = args[i + 1].replace(/[\\\/]+$/, ""); // D:\ → D:
+  if ((i >= 0 && args[i + 1]) || cda) {
+    const drive = (i >= 0 && args[i + 1] ? args[i + 1] : cda.slice(0, 2)).replace(/[\\\/]+$/, ""); // D:\ → D:
     // ドライブを選んで読み込み、音楽CDなら1曲目を再生する
     const sel = document.getElementById("player-drive");
     await new Promise((r) => setTimeout(r, 600)); // 起動直後のデバイス一覧の読み込みを待つ

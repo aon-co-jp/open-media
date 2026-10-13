@@ -13,6 +13,8 @@ const BASE: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Aut
 const EVENTS: [&str; 2] = ["PlayCDAudioOnArrival", "PlayDVDMovieOnArrival"];
 /// 有効にする前の既定の選択を控える場所(解除で元に戻す)。
 const BACKUP: &str = r"HKCU\Software\open-media\AutoplayBackup";
+/// 有効にする前のEventHandlersDefaultSelection(PowerDVD等が持つ既定)を控える場所。
+const BACKUP_SEL: &str = r"HKCU\Software\open-media\AutoplayBackupDefaultSelection";
 
 fn reg(args: &[&str]) -> Result<(), String> {
     #[cfg(windows)]
@@ -54,8 +56,60 @@ pub fn enable() -> Result<String, String> {
         }
         reg(&["add", &format!(r"{BASE}\EventHandlers\{ev}"), "/v", HANDLER, "/d", "", "/f"])?;
         reg(&["add", &format!(r"{BASE}\UserChosenExecuteHandlers"), "/v", ev, "/d", HANDLER, "/f"])?;
+        // 最近のWindowsの「自動再生」の既定は`EventHandlersDefaultSelection`にも持たれていて、こちらが優先される
+        // (PowerDVD等はここへ自分を書く)。ここも書き換えないと別のアプリが先に開く。以前の値は控えて、解除で戻す。
+        if let Some(prev) = default_selection(ev) {
+            if prev != HANDLER {
+                reg(&["add", BACKUP_SEL, "/v", ev, "/d", &prev, "/f"])?;
+            }
+        }
+        reg(&["add", &format!(r"{BASE}\EventHandlersDefaultSelection\{ev}"), "/ve", "/d", HANDLER, "/f"])?;
     }
     Ok(exe)
+}
+
+/// 今の既定の選択(EventHandlersDefaultSelectionの既定値)を読む。無ければNone。
+fn default_selection(ev: &str) -> Option<String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let o = Command::new("reg").args(["query", &format!(r"{BASE}\EventHandlersDefaultSelection\{ev}"), "/ve"]).creation_flags(0x0800_0000).output().ok()?;
+        if !o.status.success() {
+            return None;
+        }
+        let out = String::from_utf8_lossy(&o.stdout).to_string();
+        out.lines().find_map(|l| {
+            let parts: Vec<&str> = l.trim().splitn(3, "    ").map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+            (parts.len() >= 3 && (parts[0] == "(既定)" || parts[0].eq_ignore_ascii_case("(Default)"))).then(|| parts[2].to_string())
+        })
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = ev;
+        None
+    }
+}
+
+/// 控えておいた、以前のEventHandlersDefaultSelectionの値を返す。
+fn backed_up_selection(ev: &str) -> Option<String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let o = Command::new("reg").args(["query", BACKUP_SEL, "/v", ev]).creation_flags(0x0800_0000).output().ok()?;
+        if !o.status.success() {
+            return None;
+        }
+        let out = String::from_utf8_lossy(&o.stdout).to_string();
+        out.lines().find_map(|l| {
+            let parts: Vec<&str> = l.trim().splitn(3, "    ").map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+            (parts.len() >= 3 && parts[0].eq_ignore_ascii_case(ev)).then(|| parts[2].to_string())
+        })
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = ev;
+        None
+    }
 }
 
 /// 今の既定の選択(UserChosenExecuteHandlersの値)を読む。無ければNone。
@@ -115,23 +169,32 @@ pub fn disable() -> Result<(), String> {
                 let _ = reg(&["delete", &format!(r"{BASE}\UserChosenExecuteHandlers"), "/v", ev, "/f"]);
             }
         }
+        // EventHandlersDefaultSelectionも、以前の値(例: PowerDVD)があれば戻す。無ければ既定値を消す。
+        match backed_up_selection(ev) {
+            Some(prev) => {
+                let _ = reg(&["add", &format!(r"{BASE}\EventHandlersDefaultSelection\{ev}"), "/ve", "/d", &prev, "/f"]);
+                let _ = reg(&["delete", BACKUP_SEL, "/v", ev, "/f"]);
+            }
+            None => {
+                if default_selection(ev).as_deref() == Some(HANDLER) {
+                    let _ = reg(&["delete", &format!(r"{BASE}\EventHandlersDefaultSelection\{ev}"), "/ve", "/f"]);
+                }
+            }
+        }
     }
     let _ = reg(&["delete", &format!(r"{BASE}\Handlers\{HANDLER}"), "/f"]);
     let _ = reg(&["delete", &format!(r"HKCU\Software\Classes\{PROGID}"), "/f"]);
     Ok(())
 }
 
-/// 今、既定になっているか(音楽CDの既定がopen-mediaか)。
+/// 今、既定になっているか(音楽CDの既定がopen-mediaか)。優先されるEventHandlersDefaultSelectionを先に見る。
 pub fn is_enabled() -> bool {
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
-        Command::new("reg")
-            .args(["query", &format!(r"{BASE}\UserChosenExecuteHandlers"), "/v", "PlayCDAudioOnArrival"])
-            .creation_flags(0x0800_0000)
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).contains(HANDLER))
-            .unwrap_or(false)
+        match default_selection("PlayCDAudioOnArrival") {
+            Some(sel) => sel == HANDLER,
+            None => current_choice("PlayCDAudioOnArrival").as_deref() == Some(HANDLER),
+        }
     }
     #[cfg(not(windows))]
     {
@@ -148,17 +211,19 @@ mod tests {
     #[test]
     #[ignore]
     fn autoplay_real_enable_and_restore() {
-        let before: Vec<Option<String>> = EVENTS.iter().map(|e| current_choice(e)).collect();
+        let snap = || -> Vec<(Option<String>, Option<String>)> { EVENTS.iter().map(|e| (current_choice(e), default_selection(e))).collect() };
+        let before = snap();
         println!("before: {before:?}");
         assert!(!is_enabled(), "テスト前からopen-mediaが既定になっている");
         enable().expect("有効化できない");
         assert!(is_enabled(), "有効化が反映されていない");
         for e in EVENTS {
             assert_eq!(current_choice(e).as_deref(), Some(HANDLER));
+            assert_eq!(default_selection(e).as_deref(), Some(HANDLER), "優先される既定の選択が書き換わっていない");
         }
         println!("enabled ok");
         disable().unwrap();
-        let after: Vec<Option<String>> = EVENTS.iter().map(|e| current_choice(e)).collect();
+        let after = snap();
         println!("after: {after:?}");
         assert!(!is_enabled(), "解除できていない");
         assert_eq!(before, after, "元の既定の選択に戻っていない");
