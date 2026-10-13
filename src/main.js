@@ -540,6 +540,7 @@ let playerBusy = false;
 let barActive = false; // open-barで再生中(一時停止中を含む)
 let barSeenPlaying = false; // 再生中の状態を一度でも確認したか(開始直後の「停止」を終了と誤解しないため)
 let barStartedAt = 0;
+let playerNowName = ""; // いま再生している曲・項目の名前(状況の行に出す)
 let comboOffsetMs = 0; // 組み合わせ再生中の音声オフセット
 let comboActive = false;
 let seeking = false;
@@ -600,7 +601,11 @@ async function pollBar() {
       `${st.active_mode.letter}: ${st.active_mode.title_ja} / ${st.active_mode.title_en} — ${st.route_ja} / ${st.route_en}` +
       (st.note ? ` — ${st.note}` : "") +
       (st.underrun_frames ? ` — 音切れ/underruns: ${st.underrun_frames}` : "");
+    // エンジンのメッセージ(読み込み中・エラーなど)があればそれを出す。無ければ、再生中・一時停止中の表示にする
+    // (再生が始まるとメッセージは空になるため、書き換えないと「読み込み中…」が残ってしまう)。
     if (st.message) playerStatus.textContent = st.message;
+    else if (st.state === "playing") playerStatus.textContent = `再生中 / Playing: ${playerNowName}`;
+    else if (st.state === "paused") playerStatus.textContent = `一時停止中 / Paused: ${playerNowName}`;
     if (comboActive) {
       const target = st.position_secs + comboOffsetMs / 1000;
       if (Math.abs(playerMedia.currentTime - target) > 0.15) playerMedia.currentTime = Math.max(0, target);
@@ -660,6 +665,7 @@ async function playOne(statusName, run) {
   if (playerBusy) return;
   setPlayerBusy(true);
   await stopEverything();
+  playerNowName = statusName;
   playerStatus.textContent = `${statusName} を準備中... / Preparing...`;
   try {
     await run();

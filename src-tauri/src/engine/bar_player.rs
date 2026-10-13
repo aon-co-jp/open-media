@@ -115,6 +115,36 @@ mod tests {
         assert!(!is_mqa(wav.to_str().unwrap()));
     }
 
+    /// 実機テスト: アプリと同じ手順(MQA判定→再生開始→音量→250msごとの状況確認)で再生し、固まらないか確かめる。
+    /// `cargo test --lib app_sequence -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn app_sequence_cd_track_plays() {
+        let wav = std::env::temp_dir().join("md_cd_test").join("Track01.wav");
+        assert!(wav.exists(), "先に real_cd テストでTrack01.wavを作ってください");
+        let path = wav.to_str().unwrap();
+        println!("mqa={}", is_mqa(path));
+        play(path, "exclusive_upsample", false, false, 32).unwrap();
+        set_volume(1.0);
+        let t0 = std::time::Instant::now();
+        let mut last = String::new();
+        while t0.elapsed().as_secs() < 45 {
+            let st = status();
+            let line = format!("state={:?} pos={:.2} dur={:.1} out={}Hz msg={} route={}", st.state, st.position_secs, st.duration_secs, st.out_rate_hz, st.message, st.route_en);
+            if line != last {
+                println!("[{:>5.1}s] {line}", t0.elapsed().as_secs_f64());
+                last = line;
+            }
+            if st.position_secs > 3.0 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(250));
+        }
+        let st = status();
+        stop();
+        assert!(st.position_secs > 3.0, "アプリと同じ手順だと再生が進まない");
+    }
+
     /// 実機テスト(音楽CDが入った光学ドライブ D: が必要): CDのTOCを読み、1曲を取り込み、
     /// 排他モード+高品質アップサンプル+32bitで再生して、位置が進み出力レートが上がることを確かめる。
     /// `cargo test --lib real_cd -- --ignored --nocapture`
