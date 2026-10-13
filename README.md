@@ -14,10 +14,10 @@ CD / DVD / Blu-ray の書き込み・音声/動画の変換・ISO作成(make-dis
 
 | 環境 | ファイル |
 |---|---|
-| Windows | `open-media_0.1.5_x64-setup.exe` / `.msi` |
-| macOS (Apple Silicon / Intel) | `open-media_0.1.5_aarch64.dmg` / `open-media_0.1.5_x64.dmg` |
+| Windows | `open-media_0.1.6_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.6_aarch64.dmg` / `open-media_0.1.6_x64.dmg` |
 | Linux | `.deb` / `.rpm` / `.AppImage` |
-| Android(スマホ・タブレット共通) | `open-media_0.1.5_android-universal.apk`(未署名、サイドロード) |
+| Android(スマホ・タブレット共通) | `open-media_0.1.6_android-universal.apk`(未署名、サイドロード) |
 
 ## できること
 
@@ -43,7 +43,7 @@ CD / DVD / Blu-ray の書き込み・音声/動画の変換・ISO作成(make-dis
 - DVD / Blu-ray の映像はブラウザで直接再生できないため、MP4へ変換してから再生します。長い本編は待ち時間があります。
 - 排他モード・DoP は Windows のみです。macOS / Linux / Android では共有モードまたは映像プレーヤー経由の再生になります。音楽CDの取り込み・再生も Windows のみです。
 - 検証状況: Windows は実機でインストール・起動・アンインストール、CD再生、システム音声の橋渡し(DAC: Loxjie D40 Pro 相当で384 kHz/32bit)を確認。Linux(Ubuntu、WSL)はインストールと起動まで。Android は実機(Android 14)でMP4/FLACの再生まで。macOS は未確認(GitHub Actions でビルドされますが、実機では動かしていません)。
-- 自動アップデート: アプリ起動時に更新を確認し、確認のうえで更新します(デスクトップ版。署名つき)。この仕組みを入れた版より前の版は署名鍵が違うため、手動で入れ替えてください。更新の実機での通し確認は、次のリリースの後に行います(未了)。
+- 自動アップデート: アプリ起動時に更新を確認し、確認のうえで更新します(デスクトップ版。署名つき)。この仕組みを入れた版より前の版は署名鍵が違うため、手動で入れ替えてください。更新の実機での通し確認は、この版のリリース後に行います(未了)。
 - ライセンス: MIT(各依存クレートのライセンスは個別に従います)。
 
 ## ビルド

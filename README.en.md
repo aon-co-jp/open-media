@@ -14,10 +14,10 @@ Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
 
 | Platform | File |
 |---|---|
-| Windows | `open-media_0.1.5_x64-setup.exe` / `.msi` |
-| macOS (Apple Silicon / Intel) | `open-media_0.1.5_aarch64.dmg` / `open-media_0.1.5_x64.dmg` |
+| Windows | `open-media_0.1.6_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.6_aarch64.dmg` / `open-media_0.1.6_x64.dmg` |
 | Linux | `.deb` / `.rpm` / `.AppImage` |
-| Android (phones and tablets) | `open-media_0.1.5_android-universal.apk` (unsigned, sideload) |
+| Android (phones and tablets) | `open-media_0.1.6_android-universal.apk` (unsigned, sideload) |
 
 ## Features
 
@@ -43,7 +43,7 @@ Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
 - DVD / Blu-ray video cannot be played directly in the browser engine, so it is converted to MP4 first. Long titles take a while.
 - Exclusive mode and DoP are Windows-only. On macOS / Linux / Android playback uses shared mode or the video player. Audio-CD ripping and playback are Windows-only.
 - Verification: Windows install / launch / uninstall, CD playback and the system-audio bridge (DAC: a Loxjie D40 Pro-class device at 384 kHz / 32-bit) checked on real hardware. Linux (Ubuntu on WSL) checked up to install and launch. Android checked on a real device (Android 14) up to MP4 / FLAC playback. macOS is unverified (built by GitHub Actions but never run on hardware).
-- Auto-update: the desktop app checks for updates at startup and updates after you confirm (signed). Versions older than the one that introduced it use a different signing key, so replace those manually. An end-to-end update test on real hardware is pending until the next release.
+- Auto-update: the desktop app checks for updates at startup and updates after you confirm (signed). Versions older than the one that introduced it use a different signing key, so replace those manually. An end-to-end update test on real hardware is pending until this release is out.
 - License: MIT (dependencies keep their own licenses).
 
 ## Build
