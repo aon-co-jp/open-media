@@ -538,6 +538,8 @@ const RESUME_LABEL = "▶ 再開 / Resume";
 
 let playerBusy = false;
 let barActive = false; // open-barで再生中(一時停止中を含む)
+let barSeenPlaying = false; // 再生中の状態を一度でも確認したか(開始直後の「停止」を終了と誤解しないため)
+let barStartedAt = 0;
 let comboOffsetMs = 0; // 組み合わせ再生中の音声オフセット
 let comboActive = false;
 let seeking = false;
@@ -605,12 +607,19 @@ async function pollBar() {
       if (st.state === "paused" && !playerMedia.paused) playerMedia.pause();
       if (st.state === "playing" && playerMedia.paused) playerMedia.play().catch(() => {});
     }
+    if (st.state === "playing" || st.state === "paused") barSeenPlaying = true;
     if (st.state === "stopped") {
-      barActive = false;
-      if (comboActive) playerMedia.pause();
-      playerStatus.textContent = "再生が終わりました / Finished";
-      updateButtons();
-      return;
+      // 再生を始めた直後は、エンジンが読み込み中で一瞬「停止」と報告する。再生を一度でも確認するまで(最大60秒)は
+      // 終了とみなさない。ただしエラー(排他モードを開けない等)の報告があれば、すぐ終わらせて理由を見せる。
+      const failed = /開けません|失敗|エラー|cannot|failed|error/i.test(st.message || "");
+      const loading = !barSeenPlaying && !failed && Date.now() - barStartedAt < 60000;
+      if (!loading) {
+        barActive = false;
+        if (comboActive) playerMedia.pause();
+        playerStatus.textContent = failed ? `再生できません / Cannot play: ${st.message}` : "再生が終わりました / Finished";
+        updateButtons();
+        return;
+      }
     }
   } catch (_) {
     /* 次の周期で再試行 */
@@ -627,8 +636,8 @@ async function startBar(path, allowFallback = true) {
     : "";
   try {
     const bits = Number(document.getElementById("player-bits").value);
-  const trebleAll = document.getElementById("player-treble-all").checked;
-  await invoke("bar_play", { path, mode, treble, trebleAll, bits });
+    const trebleAll = document.getElementById("player-treble-all").checked;
+    await invoke("bar_play", { path, mode, treble, trebleAll, bits });
   } catch (e) {
     if (!allowFallback) throw e;
     // open-barが使えない環境(Android/iOS、音声デバイスが開けない等)では、WebViewの再生へ縮退する。
@@ -642,6 +651,8 @@ async function startBar(path, allowFallback = true) {
   }
   await invoke("bar_set_volume", { volume: Number(document.getElementById("player-vol").value) });
   barActive = true;
+  barSeenPlaying = false;
+  barStartedAt = Date.now();
   pollBar();
 }
 

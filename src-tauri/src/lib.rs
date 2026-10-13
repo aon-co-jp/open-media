@@ -690,6 +690,18 @@ pub fn run() {
         channel_layout_args,
         ai_upmix_available,
         ai_upmix_convert,
+        startup_args,
+        autoplay_enable,
+        autoplay_disable,
+        autoplay_status,
+        assoc_list,
+        assoc_register,
+        assoc_unregister,
+        open_default_apps_settings,
+        bridge_devices,
+        bridge_start,
+        bridge_stop,
+        bridge_status,
     ]);
 
     builder.run(tauri::generate_context!()).expect("error while running tauri application");

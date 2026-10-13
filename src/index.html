@@ -22,6 +22,10 @@
           <button id="player-file-btn">ディスク内のファイルを選ぶ... / Pick a file on disc...</button>
           <input id="player-file-input" type="file" accept="audio/*,video/*" style="display:none" />
         </div>
+        <ul id="player-tracks" class="disc-only"></ul>
+        <button id="player-play-btn" class="disc-only" disabled>▶ 再生 / Play</button>
+        <video id="player-media" controls style="width:100%;max-height:360px"></video>
+        <p id="player-status" class="hint"></p>
         <div class="row engine-only">
           <label>再生モード(音声) / Audio mode:
             <select id="player-mode">
@@ -67,10 +71,6 @@
           <button id="player-combo-btn">映像+音声の組み合わせ(フォルダ選択) / Video + audio combos (pick folder)</button>
           <button id="player-combo-save-btn" disabled>選んだ組み合わせを.obar.jsonで保存 / Save selected combo as .obar.json</button>
         </div>
-        <ul id="player-tracks" class="disc-only"></ul>
-        <button id="player-play-btn" class="disc-only" disabled>▶ 再生 / Play</button>
-        <video id="player-media" controls style="width:100%;max-height:360px"></video>
-        <p id="player-status" class="hint"></p>
       </section>
 
       <section id="bridge-section">
