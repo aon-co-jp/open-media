@@ -538,7 +538,23 @@ pub fn run() {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let _ = engine::plugins::sync_bundled_plugins();
 
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // 同時に2つ起動しない(Windowsの自動再生で何度も起動されても、開いているアプリへ引数を渡して前面に出す)。
+    // 公式の手順どおり、他のプラグインより先に登録する。モバイルには無い。
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+        use tauri::Manager;
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.unminimize();
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+        // 2つ目の起動の引数(`--play-disc D:\`、開いたファイル等)を、画面側へ渡す。
+        let _ = app.emit("second-instance", argv.into_iter().skip(1).collect::<Vec<String>>());
+    }));
+
+    let builder = builder
         .setup(|app| {
             // 長い処理の進捗を画面へ届ける出口(エンジンはAppHandleを知らなくてよい)。
             let handle = app.handle().clone();

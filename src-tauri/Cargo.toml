@@ -50,6 +50,8 @@ zip = { version = "4", default-features = false, features = ["deflate"] }
 # (Android/iOSはストア/APKサイドロードでの更新が前提のため対象外)。
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+# 2つ目の起動を防ぎ、すでに開いているアプリへ引数(自動再生の--play-disc等)を渡す。デスクトップのみ。
+tauri-plugin-single-instance = "2"
 # デスクトップのみ(cpal/WASAPIはAndroid/iOS非対応のためモバイルでは映像と同じWebView再生へ縮退)。
 # ディスクプレーヤーの音声側エンジン(2026-10-12取り込み): ビットパーフェクト/排他モード/DoP/高品質アップサンプル。
 # 映像(DVD/Blu-ray)はWebViewのまま、音声(CD・音声ファイル・DSD)はopen-barで再生するハイブリッド構成。

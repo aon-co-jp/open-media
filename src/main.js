@@ -2487,10 +2487,9 @@ document.getElementById("autoplay-off-btn").addEventListener("click", async () =
 })();
 
 // ── 起動時の引数: 自動再生(--play-disc D:\)やファイルを開く(open-media.exe "file") ──
-(async () => {
-  let args = [];
-  try { args = await invoke("startup_args"); } catch (_) { return; }
-  if (!args.length) return;
+// 最初の起動の引数と、2つ目の起動(すでに開いているアプリへ渡される)の引数を、同じ処理で扱う。
+async function handleLaunchArgs(args) {
+  if (!args || !args.length) return;
   const show = window.__showTab; if (show) show("play");
   const cda = args.find((a) => /\.cda$/i.test(a)); // 音楽CDの曲(D:\Track01.cda)を開いた → そのドライブのCDを再生
   const i = args.indexOf("--play-disc");
@@ -2513,4 +2512,10 @@ document.getElementById("autoplay-off-btn").addEventListener("click", async () =
   if (file && window.openMedia && /\.(mp3|wav|flac|aac|m4a|ogg|opus|dsf|dff|mka|mp4|mkv|avi|mov|webm|mpg|mpeg|vob|m2ts|ts)$/i.test(file)) {
     window.openMedia.play(file); // ファイルをopen-mediaで開いたとき: 再生
   }
+}
+(async () => {
+  try { await handleLaunchArgs(await invoke("startup_args")); } catch (_) { /* 引数なし */ }
+  // すでに開いているときに、もう一度起動された(自動再生・ファイルを開く)場合は、その引数を受け取る
+  const ev = window.__TAURI__ && window.__TAURI__.event;
+  if (ev) ev.listen("second-instance", (e) => handleLaunchArgs(e.payload)).catch(() => {});
 })();

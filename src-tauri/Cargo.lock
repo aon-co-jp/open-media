@@ -312,7 +312,7 @@ dependencies = [
  "bitflags 2.13.2",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "regex",
@@ -3270,7 +3270,7 @@ source = "git+https://github.com/aon-co-jp/open-cpu#b2319a069c54d66499830cedcc37
 
 [[package]]
 name = "open-media"
-version = "0.1.7"
+version = "0.1.9"
 dependencies = [
  "image",
  "lopdf",
@@ -3288,6 +3288,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-process",
  "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "tract-onnx",
  "ureq",
@@ -5318,6 +5319,22 @@ dependencies = [
  "tauri-plugin",
  "thiserror 2.0.20",
  "tokio",
+]
+
+[[package]]
+name = "tauri-plugin-single-instance"
+version = "2.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db817fe9295e19b7d8357e900af31edb93703dd9fb6de524b007b47b6afc63b0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "windows-sys 0.60.2",
+ "zbus",
 ]
 
 [[package]]
