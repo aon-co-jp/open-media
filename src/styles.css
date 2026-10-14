@@ -1,6 +1,25 @@
+/* 同梱の日本語フォント(Noto Sans JP、SIL Open Font License。fonts/LICENSE-NotoSansJP-OFL.txt)。
+   フォントが無い環境でも日本語が表示されるようにする(Linux・一部のAndroid等)。 */
+@font-face {
+  font-family: "Noto Sans JP Bundled";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("fonts/NotoSansJP-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans JP Bundled";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("fonts/NotoSansJP-700.woff2") format("woff2");
+}
+
 :root {
   color-scheme: light dark;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* 日本語フォントが入っていないLinux(Ubuntu等)では、日本語が四角(□)になる。システムのフォントを先に使い、
+     日本語の字が無いときだけ、同梱したNoto Sans JP(SIL OFL)へ切り替える。 */
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans JP Bundled", sans-serif;
 }
 
 body {
