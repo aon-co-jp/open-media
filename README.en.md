@@ -55,3 +55,10 @@ npm run tauri build    # build installers
 ```
 
 ffmpeg / ffprobe / xorriso are bundled by CI or taken from PATH. See [CLAUDE.md](CLAUDE.md) and [PORTING.md](PORTING.md) (including the make-disk-era development log).
+
+## Docs and moving to another PC
+
+- [`CLAUDE.en.md`](CLAUDE.en.md) — development rules, layout, how to test, pitfalls found (Japanese: [`CLAUDE.md`](CLAUDE.md))
+- [`PORTING.en.md`](PORTING.en.md) — **Moving to another PC** (tools, carrying keys, verification) and per-OS status (Japanese: [`PORTING.md`](PORTING.md))
+- `scripts/doctor.ps1` — checks that a new PC has the required tools
+- Detailed make-disk-era records: [`docs/make-disk-legacy/`](docs/make-disk-legacy/)

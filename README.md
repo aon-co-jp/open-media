@@ -55,3 +55,10 @@ npm run tauri build    # インストーラー作成
 ```
 
 ffmpeg / ffprobe / xorriso は同梱(CI)またはPATH上のものを使います。詳細は [CLAUDE.md](CLAUDE.md) / [PORTING.md](PORTING.md)(make-disk 時代の開発記録を含みます)。
+
+## 文書と引っ越し
+
+- [`CLAUDE.md`](CLAUDE.md) … 開発ルール・構成・試験の作法・見つけた落とし穴(英語: [`CLAUDE.en.md`](CLAUDE.en.md))
+- [`PORTING.md`](PORTING.md) … **別のPCへの引っ越し手順**(道具・鍵の運び方・確認)と、OS別の対応状況(英語: [`PORTING.en.md`](PORTING.en.md))
+- `scripts/doctor.ps1` … 新しいPCで、必要な道具がそろっているかの診断
+- make-disk 時代の詳しい開発記録: [`docs/make-disk-legacy/`](docs/make-disk-legacy/)
