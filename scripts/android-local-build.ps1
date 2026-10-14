@@ -1,4 +1,4 @@
-# Androidのローカルビルド(Windows)。`npm run tauri android build`はWindowsの開発者モードが無いと
+﻿# Androidのローカルビルド(Windows)。`npm run tauri android build`はWindowsの開発者モードが無いと
 # jniLibsのシンボリックリンクで失敗するため、Rustのクロスコンパイル + gradlew直叩きで同じ結果を作る。
 # Local Android build on Windows. `npm run tauri android build` fails without Windows Developer Mode
 # (symlink creation), so cross-compile with cargo and package with gradlew directly.
