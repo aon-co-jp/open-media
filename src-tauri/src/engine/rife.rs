@@ -490,7 +490,7 @@ fn speed_signature() -> String {
 /// 指定の大きさで、補間コマ1枚あたりの秒を測る(GPUで試し、出力が壊れていればCPUで測る)。結果は保存して次回以降に使う。
 pub fn speed(width: u32, height: u32, gpu: Option<u32>) -> Result<RifeSpeed, String> {
     let sig = speed_signature();
-    let mut cache: Vec<RifeSpeed> = speed_cache_path().and_then(|p| std::fs::read(p).ok()).and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+    let mut cache: Vec<RifeSpeed> = speed_cache_path().and_then(|p| std::fs::read(p).ok()).and_then(|b| sonic_rs::from_slice(&b).ok()).unwrap_or_default();
     if let Some(c) = cache.iter().find(|c| c.width == width && c.height == height && c.signature == sig) {
         return Ok(c.clone());
     }

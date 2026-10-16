@@ -240,7 +240,7 @@ mod tests {
     fn serde_round_trips_bd128_as_snake_case() {
         let json = serde_json::to_string(&DiscType::Bd128).unwrap();
         assert_eq!(json, "\"bd128\"");
-        let back: DiscType = serde_json::from_str(&json).unwrap();
+        let back: DiscType = sonic_rs::from_str(&json).unwrap();
         assert_eq!(back, DiscType::Bd128);
     }
 }

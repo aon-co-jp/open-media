@@ -511,7 +511,7 @@ struct Manifest {
 }
 
 fn read_manifest(work: &Path) -> Option<Manifest> {
-    serde_json::from_slice(&std::fs::read(work.join("manifest.json")).ok()?).ok()
+    sonic_rs::from_slice(&std::fs::read(work.join("manifest.json")).ok()?).ok()
 }
 
 fn write_manifest(work: &Path, m: &Manifest) {

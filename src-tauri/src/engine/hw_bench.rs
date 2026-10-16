@@ -151,7 +151,7 @@ fn signature() -> String {
 
 /// 保存済みの測定結果(CPUの構成が同じときだけ有効)。
 pub fn cached() -> Option<HwBench> {
-    let b: HwBench = serde_json::from_slice(&std::fs::read(cache_path()?).ok()?).ok()?;
+    let b: HwBench = sonic_rs::from_slice(&std::fs::read(cache_path()?).ok()?).ok()?;
     (b.version == BENCH_VERSION && b.signature == signature()).then_some(b)
 }
 
