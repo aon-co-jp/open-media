@@ -65,4 +65,4 @@ ffmpeg / ffprobe / xorriso は同梱(CI)またはPATH上のものを使います
 
 ---
 
-作者 / Author: 石塚正浩（MASAHIRO ISHIZUKA） (https://github.com/aon-co-jp)
+作者 / Author: 石 塚 正 浩（MASAHIRO ISHIZUKA） (https://github.com/aon-co-jp)
