@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open-media — ダウンロード / Download</title>
+<meta name="description" content="open-media: open-media = make-disk (disc burn/convert) + open-bar (hi-fi player). Windows/macOS/Linux/Android. Rust + Tauri.">
+<style>
+:root{--bg:#fff;--fg:#14181f;--sub:#57606a;--card:#f6f8fa;--line:#d0d7de;--acc:#1f6feb;--warn:#c62828;--ok:#1a7f37}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--sub:#8b949e;--card:#161b22;--line:#30363d;--acc:#4a9eff;--warn:#ff7b72;--ok:#3fb950}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.9rem;margin:8px 0 4px}
+h2{font-size:1.25rem;margin:36px 0 8px;padding-top:8px;border-top:1px solid var(--line)}
+.en{color:var(--sub);font-size:.95rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{color:var(--sub);font-weight:600;border-top:0}
+a{color:var(--acc)}
+.btn{display:inline-block;min-height:44px;padding:9px 16px;border-radius:10px;background:var(--acc);color:#fff;text-decoration:none;font-weight:600}
+.hash{font:12px/1.4 ui-monospace,Consolas,monospace;color:var(--sub);overflow-wrap:anywhere}
+footer{margin-top:40px;color:var(--sub);font-size:.88rem}
+@media (max-width:560px){h1{font-size:1.5rem} th:nth-child(3),td:nth-child(3){display:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>open-media</h1>
+<div class="card">
+<p><b>概要 / Overview</b>(リポジトリの記載のまま / as written in the repository)</p>
+<p>open-media = make-disk (disc burn/convert) + open-bar (hi-fi player). Windows/macOS/Linux/Android. Rust + Tauri.</p>
+</div>
+
+<h2>ダウンロード / Download <small>(v0.1.10 )</small></h2>
+<p><a class="btn" href="https://github.com/aon-co-jp/open-media/releases/tag/v0.1.10">リリースページ(GitHub) / Release page</a></p>
+<table>
+<tr><th>対象 / For</th><th>ファイル / File</th><th>SHA-256</th></tr>
+<tr><td>Linux<br><span class="en">Linux</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media-0.1.10-1.x86_64.rpm">open-media-0.1.10-1.x86_64.rpm</a> (154.3 MB)</td>
+ <td class="hash">ef977d6df698b268b96822230db1382bcb9eb84448e596ab88c654b5832a64b5</td></tr>
+<tr><td>macOS<br><span class="en">macOS</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_0.1.10_aarch64.dmg">open-media_0.1.10_aarch64.dmg</a> (15.1 MB)</td>
+ <td class="hash">98c57881fa3a8923c6e6097181f5434275da4d50a51fd549f8cf530eda887198</td></tr>
+<tr><td>Linux<br><span class="en">Linux</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_0.1.10_amd64.AppImage">open-media_0.1.10_amd64.AppImage</a> (214.3 MB)</td>
+ <td class="hash">e9bbd7e15ca5dec649c801c80bf9bb9ef56970d10ed326e0f7ed1a5f68010b97</td></tr>
+<tr><td>Linux<br><span class="en">Linux</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_0.1.10_amd64.deb">open-media_0.1.10_amd64.deb</a> (154.3 MB)</td>
+ <td class="hash">5f9ac1e814007d778bbd244b22eabed2b211931239a0ad6e485de1d97e53a1e1</td></tr>
+<tr><td>Android<br><span class="en">Android</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_0.1.10_android-universal.apk">open-media_0.1.10_android-universal.apk</a> (694.6 MB)</td>
+ <td class="hash">144880126815df833d446792ce286a65dc2e305688ee47106b9d70b14c7d5b9a</td></tr>
+<tr><td>Windows<br><span class="en">Windows</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_0.1.10_x64-setup.exe">open-media_0.1.10_x64-setup.exe</a> (127.5 MB)</td>
+ <td class="hash">c271ca41ab8d7d1656208e7aeefcfcc591537b537454bc26d5edae622cbac1f5</td></tr>
+<tr><td>macOS<br><span class="en">macOS</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_0.1.10_x64.dmg">open-media_0.1.10_x64.dmg</a> (16.3 MB)</td>
+ <td class="hash">7e6b390eb4d38c78bda58063685a58586f059904f96d0843232c4b1d748f2d4d</td></tr>
+<tr><td>Windows<br><span class="en">Windows</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_0.1.10_x64_en-US.msi">open-media_0.1.10_x64_en-US.msi</a> (176.8 MB)</td>
+ <td class="hash">6d42894e3c7d13bc35065ca592b3642b00dbf808dc74a297f75f44671ee4e52c</td></tr>
+<tr><td>その他<br><span class="en">Other</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_aarch64.app.tar.gz">open-media_aarch64.app.tar.gz</a> (15.3 MB)</td>
+ <td class="hash">e0d9ac3023ef9874085190689b8684055c34d75655fdc20da612288c9e019d0a</td></tr>
+<tr><td>その他<br><span class="en">Other</span></td>
+ <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media_x64.app.tar.gz">open-media_x64.app.tar.gz</a> (16.4 MB)</td>
+ <td class="hash">5e0355dada353f3dbc2fecf9163632d804090fbf6c544ed3084e268b52f6008b</td></tr>
+</table>
+<p class="en">ダウンロードしたら、上のSHA-256と一致するか確かめてください。署名のない配布物は、提供元を確かめてから実行してください。 / After downloading, check that the SHA-256 matches. Verify the source before running unsigned files.</p>
+
+<h2>詳細・既知の問題 / Details and known issues</h2>
+<p>機能、使い方、対応OS、既知の問題は、<a href="https://github.com/aon-co-jp/open-media#readme">README(GitHub)</a>とリリースページの説明を正としてください。このページは配布物への入口です。<br>
+<span class="en">For features, usage, supported OS and known issues, the README on GitHub and the release notes are authoritative. This page is only an entrance to the downloads.</span></p>
+
+<footer>
+<p>ライセンス / License: MIT ・ <a href="https://github.com/aon-co-jp/open-media">ソースコード / Source (GitHub)</a> ・ <a href="/">easy-web.tokyo</a></p>
+</footer>
+</main>
+</body>
+</html>
