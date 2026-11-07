@@ -29,13 +29,26 @@ footer{margin-top:40px;color:var(--sub);font-size:.88rem}
 <main>
 <h1>open-media</h1>
 <div class="card">
-<p><b>概要 / Overview</b>(リポジトリの記載のまま / as written in the repository)</p>
-<p>open-media = make-disk (disc burn/convert) + open-bar (hi-fi player). Windows/macOS/Linux/Android. Rust + Tauri.</p>
+<p><b>概要 / Overview</b></p>
+<p>CD・DVD・Blu-rayの書き込みと音声・動画の変換(make-disk)と、高音質プレーヤー(open-bar)を1つにしたアプリです。Windows / macOS / Linux / Android(スマホ・タブレット)に対応します。</p>
+<p class="en">One app that combines disc burning and audio/video conversion (make-disk) with a hi-fi player (open-bar), for Windows, macOS, Linux and Android (phones and tablets).</p>
+<ul>
+<li>音楽CDを、排他モード+高品質アップサンプル(例: 44.1 kHz → 352.8 kHz、32bit)で再生 / <span class="en">Plays audio CDs in exclusive mode with high-quality upsampling (e.g. 44.1 → 352.8 kHz, 32-bit)</span></li>
+<li>DVD・MP4・MKVをFull HD / 4Kへ引き上げながら再生 / <span class="en">Upconverts DVD / MP4 / MKV to Full HD / 4K while playing</span></li>
+<li>YouTubeなどの音を、別のDACへ高音質に出し直す(Windows、音楽向け。DRM音声は対象外) / <span class="en">Re-renders system audio (YouTube etc.) to another DAC at higher quality (Windows, for music; DRM audio is out of scope)</span></li>
+<li>CD・DVDを入れたら自動で開く設定、拡張子ごとの関連付け、自動更新 / <span class="en">AutoPlay for CDs and DVDs, per-extension file associations, auto-update</span></li>
+</ul>
 </div>
 
-<h2>ダウンロード / Download <small>(v0.1.10 )</small></h2>
-<p><a class="btn" href="https://github.com/aon-co-jp/open-media/releases/tag/v0.1.10">リリースページ(GitHub) / Release page</a></p>
-<table>
+<div class="card">
+<p><b>デモ / Demo</b></p>
+<p>ブラウザの中で、実際のアプリの画面を触れます(疑似動作。音は出ず、ファイルにも触れません)。<br><span class="en">Try the real app's screen in your browser (simulated: no sound, no files touched).</span></p>
+<p><a class="btn" href="./demo/">デモを開く / Open the demo</a></p>
+</div>
+
+<h2>ダウンロード / Download <small id="dl-ver">(v0.1.10 、この表は公開時点の固定表示 / static snapshot)</small></h2>
+<p><a class="btn" id="dl-release" href="https://github.com/aon-co-jp/open-media/releases/tag/v0.1.10">リリースページ(GitHub) / Release page</a></p>
+<table id="dl-table">
 <tr><th>対象 / For</th><th>ファイル / File</th><th>SHA-256</th></tr>
 <tr><td>Linux<br><span class="en">Linux</span></td>
  <td><a href="https://github.com/aon-co-jp/open-media/releases/download/v0.1.10/open-media-0.1.10-1.x86_64.rpm">open-media-0.1.10-1.x86_64.rpm</a> (154.3 MB)</td>
@@ -78,5 +91,30 @@ footer{margin-top:40px;color:var(--sub);font-size:.88rem}
 <p>ライセンス / License: MIT ・ <a href="https://github.com/aon-co-jp/open-media">ソースコード / Source (GitHub)</a> ・ <a href="/">easy-web.tokyo</a></p>
 </footer>
 </main>
+<script>
+// 常に最新のリリースを表示する。GitHubの公開API(認証不要)から読み込み、失敗したときは上の固定表示のまま。
+// Always show the latest release, read from GitHub's public API (no auth); on failure the static table above stays.
+(async () => {
+  try {
+    const r = await fetch("https://api.github.com/repos/aon-co-jp/open-media/releases/latest", { headers: { Accept: "application/vnd.github+json" } });
+    if (!r.ok) return;
+    const rel = await r.json();
+    const osOf = (n) => /\.(exe|msi)$/i.test(n) ? ["Windows", "Windows", 0] : /\.dmg$/i.test(n) ? ["macOS", "macOS", 1] : /\.(deb|rpm|appimage)$/i.test(n) ? ["Linux", "Linux", 2] : /\.apk$/i.test(n) ? ["Android", "Android", 3] : ["その他", "Other", 4];
+    const assets = (rel.assets || []).filter((a) => !/\.sig$/i.test(a.name) && a.name !== "latest.json");
+    if (!assets.length) return;
+    assets.sort((a, b) => osOf(a.name)[2] - osOf(b.name)[2] || a.name.localeCompare(b.name));
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const rows = assets.map((a) => {
+      const [ja, en] = osOf(a.name);
+      const hash = a.digest ? String(a.digest).replace(/^sha256:/, "") : "リリースページで確認 / see the release page";
+      return `<tr><td>${ja}<br><span class="en">${en}</span></td><td><a href="${esc(a.browser_download_url)}">${esc(a.name)}</a> (${(a.size / 1048576).toFixed(1)} MB)</td><td class="hash">${esc(hash)}</td></tr>`;
+    }).join("");
+    document.getElementById("dl-table").innerHTML = '<tr><th>対象 / For</th><th>ファイル / File</th><th>SHA-256</th></tr>' + rows;
+    document.getElementById("dl-ver").textContent = `(${rel.tag_name}、最新 / latest)`;
+    document.getElementById("dl-release").href = rel.html_url;
+  } catch (_) { /* 固定表示のまま */ }
+})();
+</script>
+
 </body>
 </html>
