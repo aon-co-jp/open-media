@@ -12,6 +12,9 @@ CD / DVD / Blu-ray の書き込み・音声/動画の変換・ISO作成(make-dis
 
 最新版: <https://github.com/aon-co-jp/open-media/releases/latest>
 
+- 紹介・ダウンロード(常に最新を表示): <https://easy-web.tokyo/open-media/>
+- **Webデモ**(ブラウザで画面を触れる。疑似動作で、音は出ず、ファイルにも触れません): <https://easy-web.tokyo/open-media/demo/>
+
 | 環境 | ファイル |
 |---|---|
 | Windows | `open-media_0.1.10_x64-setup.exe` / `.msi` |

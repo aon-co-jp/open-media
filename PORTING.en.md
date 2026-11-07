@@ -94,3 +94,11 @@ npm run tauri build -- --bundles nsis                # build the installer (~20 
 - No sound in exclusive mode / `0x8889000A` → another app (including open-media itself) is using the DAC. Stop it.
 - Japanese shows as boxes on Ubuntu → fixed by the bundled font (`v0.1.9` and later).
 - Reading CI results → `gh run view <id> -R aon-co-jp/open-media --json status,conclusion,jobs` (from bash).
+
+## 9. Moving the public site (easy-web.tokyo)
+
+- **Introduction and downloads** `https://easy-web.tokyo/open-media/` = the repository's `webpage/index.html` (shows the latest release from the GitHub API). **Demo** `/open-media/demo/` = `webpage/demo/` (generated from `src/` with `python scripts/build-demo.py`).
+- **Location on the VPS**: `/root/easy-web.tokyo/open-media` (a clone of the repository). Updating is just `git pull --ff-only` (no restart).
+- **Serving**: `/etc/systemd/system/open-media-web.service` (`WorkingDirectory=/root/easy-web.tokyo/open-media/webpage`, `ExecStart=/usr/bin/python3 -m http.server 8117 --bind 127.0.0.1`, `Restart=always`) plus an `open-web-server` `domains.toml` entry with `host="easy-web.tokyo"`, `backend="open_runo"`, `backend_addr="127.0.0.1:8117"`, `path_prefix="/open-media"`, `strip_prefix=true`. The front end is `open-web-server`, not nginx.
+- **Top-page intro card**: `media_banner_html()` in `open-easy-web-app/server/src/main.rs`. Building needs `vps-tidy`, `RS-JSON`, `RPoem` and `open-raid-z` as siblings under `/root/repository/`.
+- When moving to a new VPS, recreate these four things (clone, unit, domains.toml, top-page card) and check that `curl -I https://easy-web.tokyo/open-media/` and `/open-media/demo/` return 200.

@@ -206,3 +206,11 @@ npm run tauri build -- --bundles nsis                # インストーラーを�
 - **WASM по-прежнему остаётся технологией для интерфейса.** Изменилось лишь то, что вызываемый им API теперь построен на Connect.
 - Интерфейсы, форма которых задана внешним стандартом (ACME, обратные вызовы OAuth, вебхуки сторонних сервисов, проверки работоспособности, статические файлы, OTLP), остаются обычным HTTP.
 - **Если есть сомнения — выбирайте Connect.**
+
+## 9. 公開サイト(easy-web.tokyo)の引っ越し
+
+- **紹介・ダウンロード** `https://easy-web.tokyo/open-media/` = リポジトリの `webpage/index.html`(最新リリースをGitHub APIから自動表示)。**デモ** `/open-media/demo/` = `webpage/demo/`(`python scripts/build-demo.py` で `src/` から作る)。
+- **VPSの置き場所**: `/root/easy-web.tokyo/open-media`(リポジトリのclone)。更新は `git pull --ff-only` だけ(再起動不要)。
+- **配信**: `/etc/systemd/system/open-media-web.service`(`WorkingDirectory=/root/easy-web.tokyo/open-media/webpage`、`ExecStart=/usr/bin/python3 -m http.server 8117 --bind 127.0.0.1`、`Restart=always`)+ `open-web-server` の `domains.toml` に `host="easy-web.tokyo"`、`backend="open_runo"`、`backend_addr="127.0.0.1:8117"`、`path_prefix="/open-media"`、`strip_prefix=true`。前面は nginx ではなく `open-web-server`。
+- **トップページの紹介カード**: `open-easy-web-app/server/src/main.rs` の `media_banner_html()`。ビルドには `vps-tidy`・`RS-JSON`・`RPoem`・`open-raid-z` が横に必要(`/root/repository/` 以下)。
+- 新しいVPSへ移すときは、上の4点(clone・unit・domains.toml・トップのカード)を作り直し、`curl -I https://easy-web.tokyo/open-media/` と `/open-media/demo/` が200か確かめる。

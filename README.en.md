@@ -12,6 +12,9 @@ One app that combines disc burning, audio/video conversion and ISO creation (mak
 
 Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
 
+- Introduction and downloads (always the latest): <https://easy-web.tokyo/open-media/>
+- **Web demo** (try the screen in your browser; simulated, no sound, no files touched): <https://easy-web.tokyo/open-media/demo/>
+
 | Platform | File |
 |---|---|
 | Windows | `open-media_0.1.10_x64-setup.exe` / `.msi` |
