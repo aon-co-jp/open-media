@@ -88,3 +88,9 @@ player (open-bar). make-disk is frozen at its final release; development continu
 ## Keeping docs current
 
 Update the README "Status", this file and `PORTING.en.md` in **both languages** whenever features or verification change, commit and push (and `git pull` in `/root/repository/open-media` on the VPS).
+
+## Public site (easy-web.tokyo) hand-off (2026-11-07)
+- `/open-media/` = `webpage/index.html` (shows the latest release from the GitHub API), served by `open-media-web.service` (`python3 -m http.server 8117`, working dir `/root/easy-web.tokyo/open-media/webpage`) plus the `open-web-server` `domains.toml` entry (`path_prefix="/open-media"`, `strip_prefix=true`, `127.0.0.1:8117`). Deploy = `git pull --ff-only` on the VPS (no restart).
+- `/open-media/demo/` = `webpage/demo/` (**generated from `src/` with `python scripts/build-demo.py`**; engine stand-in `webpage/demo-src/demo-stub.js`). Re-run and commit after UI changes. In tests the browser may cache an old stub → `fetch(url,{cache:'reload'})`.
+- **Unfinished**: the intro card on the top page. `media_banner_html()` was added on the VPS in `/root/repository/open-easy-web-app/server/src/main.rs` (uncommitted; backup `.bak-20261107-open-media`). **A build was running** (`/tmp/oew-build.log`, `cargo build --release -j 2`; sibling `/root/repository/vps-tidy` was cloned for it). When done: check `EXIT=0` → `systemctl restart open-easy-web.service` → confirm `open-media-intro` appears on the top page → commit and push on the VPS. No admin OTP is needed for a static public page (use the existing open-easy-web OTP if an admin page is added).
+- Unverified: whether open-media opens before PowerDVD (re-insert a CD), real DVD/Blu-ray discs, macOS and Android TV hardware.

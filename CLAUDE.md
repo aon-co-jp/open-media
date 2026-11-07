@@ -201,3 +201,9 @@ READMEの「現状」・本書・`PORTING.md` は、機能や確認が変わる�
 - **WASM по-прежнему остаётся технологией для интерфейса.** Изменилось лишь то, что вызываемый им API теперь построен на Connect.
 - Интерфейсы, форма которых задана внешним стандартом (ACME, обратные вызовы OAuth, вебхуки сторонних сервисов, проверки работоспособности, статические файлы, OTLP), остаются обычным HTTP.
 - **Если есть сомнения — выбирайте Connect.**
+
+## 公開サイト(easy-web.tokyo)の引き継ぎ(2026-11-07)
+- `/open-media/` = `webpage/index.html`(最新リリースをGitHub APIから自動表示)。`open-media-web.service`(`python3 -m http.server 8117`、`WorkingDirectory=/root/easy-web.tokyo/open-media/webpage`)+ `open-web-server` の `domains.toml`(`path_prefix="/open-media"`、`strip_prefix=true`、`127.0.0.1:8117`)。VPSは `git pull --ff-only` だけで反映(再起動不要)。
+- `/open-media/demo/` = `webpage/demo/`(**`python scripts/build-demo.py` で `src/` から作る**。エンジンの代役は `webpage/demo-src/demo-stub.js`)。画面を変えたら再実行してコミット。確認時、ブラウザのキャッシュで古いスタブが残る→`fetch(url,{cache:'reload'})`。
+- **未了**: トップページ(`https://easy-web.tokyo/`)の紹介カード。VPSの `/root/repository/open-easy-web-app/server/src/main.rs` に `media_banner_html()` を追加済み(未コミット・バックアップ `.bak-20261107-open-media`)。**ビルド中だった**(`/tmp/oew-build.log`、`cargo build --release -j 2`、姉妹の `/root/repository/vps-tidy` をcloneして用意)。終わったら `EXIT=0` を確認→`systemctl restart open-easy-web.service`→トップに `open-media-intro` が出るか確認→VPSでコミット・push。管理者向けOTPは静的な紹介ページには不要(既存のopen-easy-web OTPを使う)。
+- 未確認: PowerDVDより先にopen-mediaが開くか(CDの入れ直し)、DVD/Blu-ray実ディスク、macOS・Android TV実機。
