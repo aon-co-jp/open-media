@@ -42,7 +42,7 @@ lopdf = "0.42"
 # AI超解像プラグイン(Real-ESRGAN)のオンデマンド取得・展開(2026-09-19新設)。
 ureq = "2"
 # 音声の帯域拡張(LavaSRのONNX推論、純Rust)とFFT(2026-09-19新設)。
-tract-onnx = "0.21"
+tract-onnx = "0.23"
 rustfft = "6"
 zip = { version = "9", default-features = false, features = ["deflate"] }
 

@@ -239,7 +239,7 @@ pub fn ensure_models() -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-type Plan = TypedRunnableModel<TypedModel>;
+type Plan = std::sync::Arc<TypedRunnableModel>;
 
 pub struct Lavasr {
     backbone: Plan,
@@ -302,8 +302,8 @@ impl Lavasr {
             let hidden = self.backbone.run(tvec!(x.into())).map_err(|e| format!("backbone推論に失敗しました: {e}"))?;
             let h = hidden[0].clone().into_tensor();
             let heads = self.head.run(tvec!(h.into())).map_err(|e| format!("spec_head推論に失敗しました: {e}"))?;
-            let re = heads[0].to_array_view::<f32>().map_err(|e| e.to_string())?; // [1][bins][t]
-            let im = heads[1].to_array_view::<f32>().map_err(|e| e.to_string())?;
+            let re = heads[0].to_plain_array_view::<f32>().map_err(|e| e.to_string())?; // [1][bins][t]
+            let im = heads[1].to_plain_array_view::<f32>().map_err(|e| e.to_string())?;
             for j in 0..core {
                 for k in 0..bins {
                     out_spec[(start + j) * bins + k] = Complex::new(re[[0, k, CONTEXT_FRAMES + j]], im[[0, k, CONTEXT_FRAMES + j]]);

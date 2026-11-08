@@ -72,7 +72,7 @@ pub fn is_available() -> bool {
     model_path().is_some()
 }
 
-type Plan = TypedRunnableModel<TypedModel>;
+type Plan = std::sync::Arc<TypedRunnableModel>;
 
 struct TractBackend {
     plan: Plan,
@@ -105,7 +105,7 @@ impl UpmixBackend for TractBackend {
         data[CHUNK_SAMPLES..].copy_from_slice(right);
         let input = tract_ndarray::Array3::from_shape_vec((1, 2, CHUNK_SAMPLES), data).map_err(|e| e.to_string())?.into_tensor();
         let result = self.plan.run(tvec!(input.into())).map_err(|e| format!("推論に失敗しました: {e}"))?;
-        let out = result[0].to_array_view::<f32>().map_err(|e| e.to_string())?;
+        let out = result[0].to_plain_array_view::<f32>().map_err(|e| e.to_string())?;
         // 出力shape: [1, 4, 2, CHUNK_SAMPLES]
         let mut stems: [[Vec<f32>; 2]; 4] = std::array::from_fn(|_| [Vec::new(), Vec::new()]);
         for (s, stem) in stems.iter_mut().enumerate() {
