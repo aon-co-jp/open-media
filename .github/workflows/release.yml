@@ -42,8 +42,12 @@ jobs:
             args: ""
           - platform: "windows-latest"
             args: ""
+          # Snapdragon (Windows on ARM) build: non-blocking until verified on the runner
+          - platform: "windows-11-arm"
+            args: "--target aarch64-pc-windows-msvc"
 
     runs-on: ${{ matrix.platform }}
+    continue-on-error: ${{ matrix.platform == 'windows-11-arm' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,7 +62,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || (matrix.platform == 'windows-11-arm' && 'aarch64-pc-windows-msvc' || '') }}
 
       - name: install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
