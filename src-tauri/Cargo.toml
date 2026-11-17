@@ -18,7 +18,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-sonic-rs = "0.3"
+sonic-rs = "0.5"
 open-mqa = { git = "https://github.com/aon-co-jp/open-mqa", rev = "2d94ada", default-features = false }
 tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-opener = "2"
@@ -38,7 +38,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg"]
 # PDFの綴じ方向一括変換(2026-09-16新設、ページ順序反転による右綴じ⇄
 # 左綴じ変換)。純Rust実装でネイティブ依存が無く、上のimage crateと
 # 同じ理由でAndroid/iOSクロスコンパイルにも問題無い。
-lopdf = "0.42"
+lopdf = "0.47"
 # AI超解像プラグイン(Real-ESRGAN)のオンデマンド取得・展開(2026-09-19新設)。
 ureq = "2"
 # 音声の帯域拡張(LavaSRのONNX推論、純Rust)とFFT(2026-09-19新設)。
