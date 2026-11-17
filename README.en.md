@@ -65,3 +65,5 @@ ffmpeg / ffprobe / xorriso are bundled by CI or taken from PATH. See [CLAUDE.md]
 - [`PORTING.en.md`](PORTING.en.md) — **Moving to another PC** (tools, carrying keys, verification) and per-OS status (Japanese: [`PORTING.md`](PORTING.md))
 - `scripts/doctor.ps1` — checks that a new PC has the required tools
 - Detailed make-disk-era records: [`docs/make-disk-legacy/`](docs/make-disk-legacy/)
+
+Resuming on another account: see the "Resume message" at the end of [`PORTING.en.md`](PORTING.en.md) and of [`CLAUDE.en.md`](CLAUDE.en.md).

@@ -207,3 +207,7 @@ READMEの「現状」・本書・`PORTING.md` は、機能や確認が変わる�
 - `/open-media/demo/` = `webpage/demo/`(**`python scripts/build-demo.py` で `src/` から作る**。エンジンの代役は `webpage/demo-src/demo-stub.js`)。画面を変えたら再実行してコミット。確認時、ブラウザのキャッシュで古いスタブが残る→`fetch(url,{cache:'reload'})`。
 - **トップページの紹介カードは完了(2026-11-07)**: `open-easy-web-app/server/src/main.rs` の `media_banner_html()`(コミット `6b01170`)。VPSでのビルドには、横に姉妹の `vps-tidy`(`/root/repository/vps-tidy`)が要る。手順: `cd /root/repository/open-easy-web-app/server && cargo build --release -j 2` → `systemctl restart open-easy-web.service` → トップに `open-media-intro` が出るか確認。管理者向けOTPは、静的な公開ページには不要(管理ページを足すときは、既存のopen-easy-web OTPに載せる)。
 - 未確認: PowerDVDより先にopen-mediaが開くか(CDの入れ直し)、DVD/Blu-ray実ディスク、macOS・Android TV実機。
+
+## 2026-11-17 再開用メッセージ(open-media)
+
+再開するリポジトリ: `F:\open-media`(aon-co-jp/open-media)と`F:\runo`(メタ索引)。VPSは`ssh conoha`の`/root/easy-web.tokyo/open-media`・`/root/repository/open-media`・`/root/repository/open-easy-web-app`。まず `git pull --ff-only` で最新にし、open-mediaの`CLAUDE.md`「公開サイト(easy-web.tokyo)の引き継ぎ」と`PORTING.md`第9章を読む。確認済み(2026-11-07〜17): `/open-media/`と`/open-media/demo/`が200で公開、トップページの紹介カード(`media_banner_html()`、open-easy-web-app `6b01170`)反映済み、docs `1eeec5c`。未了・未確認: (1)CD再挿入でPowerDVDではなくopen-mediaが開くか(実機で本人が確認)、(2)DVD/Blu-rayの実ディスク、(3)macOS・Android TV実機、(4)easy-web.tokyoにまだ載っていない他プロジェクトの紹介ページ(洗い出しから)、(5)管理者ページを足す場合のみ既存open-easy-webのメールOTPに載せる(静的な公開ページには不要)。注意: UI(`src/`)を直したら`python scripts/build-demo.py`でデモを作り直してコミット。シークレット(`F:\open-media-updater.key`等)の値は出さない。Windowsが基本・Ubuntu(WSL)は試験用で同時起動しない。

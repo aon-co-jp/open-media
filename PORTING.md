@@ -214,3 +214,9 @@ npm run tauri build -- --bundles nsis                # インストーラーを�
 - **配信**: `/etc/systemd/system/open-media-web.service`(`WorkingDirectory=/root/easy-web.tokyo/open-media/webpage`、`ExecStart=/usr/bin/python3 -m http.server 8117 --bind 127.0.0.1`、`Restart=always`)+ `open-web-server` の `domains.toml` に `host="easy-web.tokyo"`、`backend="open_runo"`、`backend_addr="127.0.0.1:8117"`、`path_prefix="/open-media"`、`strip_prefix=true`。前面は nginx ではなく `open-web-server`。
 - **トップページの紹介カード**: `open-easy-web-app/server/src/main.rs` の `media_banner_html()`。ビルドには `vps-tidy`・`RS-JSON`・`RPoem`・`open-raid-z` が横に必要(`/root/repository/` 以下)。
 - 新しいVPSへ移すときは、上の4点(clone・unit・domains.toml・トップのカード)を作り直し、`curl -I https://easy-web.tokyo/open-media/` と `/open-media/demo/` が200か確かめる。
+
+## 10. 2026-11-17 再開用メッセージ(open-media)
+
+別のアカウントで再開するときは、次をそのまま貼り付ける。
+
+> 再開するリポジトリ: `F:\open-media`(aon-co-jp/open-media)と`F:\runo`(メタ索引)。VPSは`ssh conoha`の`/root/easy-web.tokyo/open-media`・`/root/repository/open-media`・`/root/repository/open-easy-web-app`。まず `git pull --ff-only` で最新にし、open-mediaの`CLAUDE.md`「公開サイト(easy-web.tokyo)の引き継ぎ」と`PORTING.md`第9章を読む。確認済み(2026-11-07〜17): `/open-media/`と`/open-media/demo/`が200で公開、トップページの紹介カード(`media_banner_html()`、open-easy-web-app `6b01170`)反映済み、docs `1eeec5c`。未了・未確認: (1)CD再挿入でPowerDVDではなくopen-mediaが開くか(実機で本人が確認)、(2)DVD/Blu-rayの実ディスク、(3)macOS・Android TV実機、(4)easy-web.tokyoにまだ載っていない他プロジェクトの紹介ページ(洗い出しから)、(5)管理者ページを足す場合のみ既存open-easy-webのメールOTPに載せる(静的な公開ページには不要)。注意: UI(`src/`)を直したら`python scripts/build-demo.py`でデモを作り直してコミット。シークレット(`F:\open-media-updater.key`等)の値は出さない。Windowsが基本・Ubuntu(WSL)は試験用で同時起動しない。
