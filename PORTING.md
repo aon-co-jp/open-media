@@ -226,3 +226,19 @@ npm run tauri build -- --bundles nsis                # インストーラーを�
 
 **日本語**: AIアップミックス(HT-Demucs)のGPU版(`ort`+DirectML、`src-tauri/src/engine/ai_upmix.rs`)は、DirectML込みでコンパイル成功・単体テスト6件成功(2026-11-18)。**未了**: 実モデルでのGPU推論の通し確認(モデルがこのPCに無い。取得はダウンロードなので許可を得てから。`tools/demucs-onnx-patch/`または新リポジトリ[`tract-onnx-patch`](https://github.com/aon-co-jp/tract-onnx-patch)でtract用にパッチ→`MAKE_DISK_DEMUCS_MODEL_DIR`に置く→GPU/CPUの出力一致と速度を測る)。ビルド用の`CARGO_TARGET_DIR`は`F:\open-media\target-ai`。
 **English**: The GPU build of AI upmix (HT-Demucs; `ort` + DirectML, `src-tauri/src/engine/ai_upmix.rs`) compiles with DirectML and its 6 unit tests pass (2026-11-18). **Open**: an end-to-end GPU inference run with the real model (not on this PC; fetching it is a download, so ask first; patch it for tract with `tools/demucs-onnx-patch/` or the new repo [`tract-onnx-patch`](https://github.com/aon-co-jp/tract-onnx-patch), put it in `MAKE_DISK_DEMUCS_MODEL_DIR`, then compare GPU vs CPU output and speed). Build with `CARGO_TARGET_DIR=F:\open-media\target-ai`.
+
+## 2026-11-19 AIアップミックスの実モデル検証 / Real-model check of AI upmix
+
+**日本語**: 実モデル(HT-Demucs、StemSplitio配布、`tract-onnx-patch`でパッチ→.onnx約148MB+外部データ約2GB)で、`cargo test --release --lib gpu_matches_cpu -- --ignored --nocapture`(`MAKE_DISK_DEMUCS_MODEL_DIR`と、DirectML対応`onnxruntime.dll`を指す`ORT_DYLIB_PATH`が必要)を実行した。
+- **CPU(tract、最適化ビルド)**: モデル読み込み58.6秒、7.8秒ぶんの1チャンクが15.0秒(実時間の約2倍)。出力は有音。
+- **onnxruntime CPU(Python、参考)**: 同じチャンクが約2.9秒(tractの約5倍速い)。
+- **GPU(DirectML)**: このPC(GeForce GT 730 2GB)では、元モデル・パッチ済みモデルとも、最適化レベルやデバイス指定を変えても初期化が`80070057`で失敗する(Pythonのonnxruntime-directmlでも同じ)。**GPUでの推論と、GPU/CPUの出力一致は未検証**(十分なVRAMのGPUが要る)。失敗時にCPU(tract)へ落ちる動作は確認できた。
+- **次の判断**: tractは遅い。onnxruntime(CPU)を中間のフォールバックにすれば約5倍速いが、`onnxruntime.dll`(約21MB)を同梱する必要がある(配布サイズと純Rustの方針とのトレードオフ)。
+- モデルの置き場は`F:\open-media\_model`(gitの対象外、約5GB)。
+
+**English**: Ran `cargo test --release --lib gpu_matches_cpu -- --ignored --nocapture` on the real HT-Demucs (patched with `tract-onnx-patch`; ~148 MB .onnx + ~2 GB external data), with `MAKE_DISK_DEMUCS_MODEL_DIR` and `ORT_DYLIB_PATH` pointing at a DirectML-enabled `onnxruntime.dll`.
+- **CPU (tract, release build)**: model load 58.6 s; one 7.8 s chunk takes 15.0 s (about 2x slower than real time); output is non-silent.
+- **onnxruntime CPU (Python, for reference)**: the same chunk takes ~2.9 s (about 5x faster than tract).
+- **GPU (DirectML)**: on this PC (GeForce GT 730, 2 GB) initialization fails with `80070057` for both the original and the patched model regardless of optimization level or device id (same with Python onnxruntime-directml). **GPU inference and GPU/CPU output agreement are unverified** (a GPU with enough VRAM is needed). The fallback to CPU (tract) on failure was confirmed.
+- **Decision pending**: tract is slow. Using onnxruntime (CPU) as an intermediate fallback would be ~5x faster but requires shipping `onnxruntime.dll` (~21 MB), a trade-off against download size and the pure-Rust policy.
+- The model lives in `F:\open-media\_model` (untracked, ~5 GB).

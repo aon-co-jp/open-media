@@ -297,6 +297,63 @@ pub fn upmix_source_file(input_path: &str, output: &Path, target: ChannelLayoutT
 mod tests {
     use super::*;
 
+    /// 実モデルでGPU(DirectML)とCPU(tract)の出力一致と速度を測る手動試験。
+    /// `MAKE_DISK_DEMUCS_MODEL_DIR`にパッチ済みモデルを置き、`ORT_DYLIB_PATH`にDirectML対応の
+    /// onnxruntime.dllを指して `cargo test --lib gpu_matches_cpu -- --ignored --nocapture` で実行する。
+    #[cfg(windows)]
+    #[test]
+    #[ignore]
+    fn gpu_matches_cpu_on_real_model() {
+        let n = CHUNK_SAMPLES;
+        let mut seed = 12345u32;
+        let mut noise = || {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            (seed >> 8) as f32 / 16_777_216.0 - 0.5
+        };
+        let left: Vec<f32> = (0..n).map(|i| 0.3 * (i as f32 * 0.02).sin() + 0.1 * (i as f32 * 0.31).sin() + 0.05 * noise()).collect();
+        let right: Vec<f32> = (0..n).map(|i| 0.3 * (i as f32 * 0.02).sin() - 0.1 * (i as f32 * 0.17).sin() + 0.05 * noise()).collect();
+
+        let t = std::time::Instant::now();
+        let cpu = TractBackend::load().expect("tract load");
+        let cpu_load = t.elapsed();
+        let t = std::time::Instant::now();
+        let c = cpu.run_chunk(&left, &right).expect("cpu run");
+        let cpu_run = t.elapsed();
+        eprintln!("CPU(tract): load {cpu_load:?} run {cpu_run:?}");
+
+        let t = std::time::Instant::now();
+        let gpu = match gpu::OrtDirectMlBackend::load() {
+            Ok(g) => g,
+            Err(e) => {
+                // 非力なGPU(VRAM不足等)ではDirectMLの初期化に失敗する。本番ではCPUへフォールバックする設計どおり。
+                eprintln!("GPU(DirectML)を使えないためCPUのみ測定しました: {e}");
+                return;
+            }
+        };
+        let gpu_load = t.elapsed();
+        let t = std::time::Instant::now();
+        let g = gpu.run_chunk(&left, &right).expect("gpu run");
+        let gpu_run = t.elapsed();
+        let t = std::time::Instant::now();
+        let _ = gpu.run_chunk(&left, &right).expect("gpu run 2");
+        let gpu_run2 = t.elapsed();
+
+        let (mut max_diff, mut max_abs, mut energy) = (0f32, 0f32, 0f64);
+        for s in 0..4 {
+            for ch in 0..2 {
+                for (a, b) in c[s][ch].iter().zip(&g[s][ch]) {
+                    max_diff = max_diff.max((a - b).abs());
+                    max_abs = max_abs.max(a.abs());
+                    energy += (*a as f64) * (*a as f64);
+                }
+            }
+        }
+        eprintln!("CPU: load {cpu_load:?} run {cpu_run:?} / GPU: load {gpu_load:?} run {gpu_run:?} 2nd {gpu_run2:?}");
+        eprintln!("max|cpu-gpu| = {max_diff:.6} (max|cpu| = {max_abs:.4}, energy {energy:.1})");
+        assert!(energy > 0.0, "出力が無音");
+        assert!(max_diff < 0.05 * max_abs.max(1e-3), "GPUとCPUの出力が大きく違う");
+    }
+
     fn silent_stems(n: usize) -> [[Vec<f32>; 2]; 4] {
         std::array::from_fn(|_| [vec![0f32; n], vec![0f32; n]])
     }
