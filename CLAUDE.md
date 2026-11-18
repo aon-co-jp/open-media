@@ -211,3 +211,9 @@ READMEの「現状」・本書・`PORTING.md` は、機能や確認が変わる�
 ## 2026-11-17 再開用メッセージ(open-media)
 
 再開するリポジトリ: `F:\open-media`(aon-co-jp/open-media)と`F:\runo`(メタ索引)。VPSは`ssh conoha`の`/root/easy-web.tokyo/open-media`・`/root/repository/open-media`・`/root/repository/open-easy-web-app`。まず `git pull --ff-only` で最新にし、open-mediaの`CLAUDE.md`「公開サイト(easy-web.tokyo)の引き継ぎ」と`PORTING.md`第9章を読む。確認済み(2026-11-07〜17): `/open-media/`と`/open-media/demo/`が200で公開、トップページの紹介カード(`media_banner_html()`、open-easy-web-app `6b01170`)反映済み、docs `1eeec5c`。未了・未確認: (1)CD再挿入でPowerDVDではなくopen-mediaが開くか(実機で本人が確認)、(2)DVD/Blu-rayの実ディスク、(3)macOS・Android TV実機、(4)easy-web.tokyoにまだ載っていない他プロジェクトの紹介ページ(洗い出しから)、(5)管理者ページを足す場合のみ既存open-easy-webのメールOTPに載せる(静的な公開ページには不要)。注意: UI(`src/`)を直したら`python scripts/build-demo.py`でデモを作り直してコミット。シークレット(`F:\open-media-updater.key`等)の値は出さない。Windowsが基本・Ubuntu(WSL)は試験用で同時起動しない。
+
+
+## HANDOFF 2026-11-18 別アカウントでの再開用 / Resume on another account
+
+**日本語**: AIアップミックス(HT-Demucs)のGPU版(`ort`+DirectML、`src-tauri/src/engine/ai_upmix.rs`)は、DirectML込みでコンパイル成功・単体テスト6件成功(2026-11-18)。**未了**: 実モデルでのGPU推論の通し確認(モデルがこのPCに無い。取得はダウンロードなので許可を得てから。`tools/demucs-onnx-patch/`または新リポジトリ[`tract-onnx-patch`](https://github.com/aon-co-jp/tract-onnx-patch)でtract用にパッチ→`MAKE_DISK_DEMUCS_MODEL_DIR`に置く→GPU/CPUの出力一致と速度を測る)。ビルド用の`CARGO_TARGET_DIR`は`F:\open-media\target-ai`。
+**English**: The GPU build of AI upmix (HT-Demucs; `ort` + DirectML, `src-tauri/src/engine/ai_upmix.rs`) compiles with DirectML and its 6 unit tests pass (2026-11-18). **Open**: an end-to-end GPU inference run with the real model (not on this PC; fetching it is a download, so ask first; patch it for tract with `tools/demucs-onnx-patch/` or the new repo [`tract-onnx-patch`](https://github.com/aon-co-jp/tract-onnx-patch), put it in `MAKE_DISK_DEMUCS_MODEL_DIR`, then compare GPU vs CPU output and speed). Build with `CARGO_TARGET_DIR=F:\open-media\target-ai`.
