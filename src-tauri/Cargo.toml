@@ -66,6 +66,10 @@ open-bar = { git = "https://github.com/aon-co-jp/open-bar", rev = "f6163cb" }
 # (rife-ncnn-vulkanのGPU失敗時CPUフォールバックと同じ設計思想)。
 ort = { version = "2.0.0-rc.13", default-features = false, features = ["directml", "load-dynamic", "ndarray"] }
 
+[target.'cfg(all(not(windows), not(target_os = "android")))'.dependencies]
+# macOS/Linuxではonnxruntime(CPU)を実行時に読み込む(DirectMLはWindowsのみ)。
+ort = { version = "2.0.0-rc.13", default-features = false, features = ["load-dynamic", "ndarray"] }
+
 [target.'cfg(target_os = "android")'.dependencies]
 # Tauri標準のtauri-plugin-dialogはモバイルでのフォルダ選択を意図的に
 # 未実装としているため(Cargo.tomlに"Does not support folder picker"と

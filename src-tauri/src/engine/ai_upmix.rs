@@ -123,17 +123,19 @@ impl UpmixBackend for TractBackend {
 /// 利用可能なバックエンドを選ぶ: Windowsではまずort/DirectML(GPU)を試し、失敗すれば
 /// tract(CPU)へフォールバックする。Windows以外は常にtract(CPU)。
 fn load_backend() -> Result<Box<dyn UpmixBackend>, String> {
+    // 1) GPU(DirectML、Windowsのみ) 2) onnxruntimeのCPU(tractより約5倍速い) 3) 純Rustのtract(常に使える最後の砦)
     #[cfg(windows)]
-    {
-        match gpu::OrtDirectMlBackend::load() {
-            Ok(b) => {
-                eprintln!("make-disk: AIアップミックスをGPU(DirectML)で実行します");
-                return Ok(Box::new(b));
-            }
-            Err(e) => {
-                eprintln!("make-disk: AIアップミックスのGPU(DirectML)初期化に失敗したため、CPUで実行します: {e}");
-            }
+    match gpu::OrtBackend::load(true) {
+        Ok(b) => {
+            eprintln!("make-disk: AIアップミックスをGPU(DirectML)で実行します");
+            return Ok(Box::new(b));
         }
+        Err(e) => eprintln!("make-disk: AIアップミックスのGPU(DirectML)を使えないため、次の方法を試します: {e}"),
+    }
+    #[cfg(not(target_os = "android"))]
+    match gpu::OrtBackend::load(false) {
+        Ok(b) => return Ok(Box::new(b)),
+        Err(e) => eprintln!("make-disk: onnxruntime(CPU)を使えないため、純Rustのtractで実行します(遅くなります): {e}"),
     }
     Ok(Box::new(TractBackend::load()?))
 }
@@ -173,39 +175,71 @@ fn separate_all(sr: u32, channels: &[Vec<f32>]) -> Result<[[Vec<f32>; 2]; 4], St
     Ok(stems.map(|s| [s[0].clone(), s[1].clone()]))
 }
 
-/// GPU(DirectML経由のort)バックエンド。Windows専用。
-#[cfg(windows)]
+/// onnxruntime(ort)バックエンド。GPU(DirectML、Windowsのみ)と、CPU(tractより約5倍速い)の2通り。
+/// どちらも`onnxruntime.dll`(`.so`/`.dylib`)を実行時に読み込む(同梱または`ORT_DYLIB_PATH`)。
+/// 見つからなければ読み込みに失敗し、呼び出し側が純Rustのtractへ落とす。
+#[cfg(not(target_os = "android"))]
 mod gpu {
     use super::{model_path, CHUNK_SAMPLES};
+    #[cfg(windows)]
     use ort::ep::DirectML;
     use ort::session::{builder::GraphOptimizationLevel, Session};
     use ort::value::Tensor;
     use std::sync::Mutex;
 
-    pub struct OrtDirectMlBackend {
+    pub struct OrtBackend {
+        gpu: bool,
         // Session::run()は&mut selfを要求するが、UpmixBackendトレイトは&selfで
         // 呼ばれる(チャンクを順に処理するだけで並行実行はしないため、Mutexで足りる)。
         session: Mutex<Session>,
     }
 
-    impl OrtDirectMlBackend {
-        pub fn load() -> Result<Self, String> {
+    /// onnxruntimeのライブラリを探し、`ORT_DYLIB_PATH`が未設定なら見つかった場所を設定する。
+    /// 探す順: 環境変数 → 実行ファイルの隣 → プラグインフォルダの`ai-upmix/onnxruntime/`。
+    fn locate_runtime() -> Result<(), String> {
+        if std::env::var_os("ORT_DYLIB_PATH").is_some() {
+            return Ok(());
+        }
+        let name = if cfg!(windows) { "onnxruntime.dll" } else if cfg!(target_os = "macos") { "libonnxruntime.dylib" } else { "libonnxruntime.so" };
+        let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+        if let Some(d) = std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.to_path_buf())) {
+            dirs.push(d);
+        }
+        if let Some(d) = crate::engine::plugins::plugin_dir() {
+            dirs.push(d.join("ai-upmix").join("onnxruntime"));
+        }
+        for d in dirs {
+            let f = d.join(name);
+            if f.is_file() {
+                std::env::set_var("ORT_DYLIB_PATH", &f);
+                return Ok(());
+            }
+        }
+        Err(format!("{name}が見つかりません(実行ファイルの隣か、ai-upmix/onnxruntime/に置くか、ORT_DYLIB_PATHで指定してください)"))
+    }
+
+    impl OrtBackend {
+        /// `gpu`=trueならDirectML(Windowsのみ)、falseならonnxruntimeのCPU実行。
+        pub fn load(gpu: bool) -> Result<Self, String> {
             let path = model_path().ok_or("AIアップミックスのモデルが見つかりません")?;
-            let session = Session::builder()
-                .map_err(|e| e.to_string())?
-                .with_optimization_level(GraphOptimizationLevel::Level3)
-                .map_err(|e| e.to_string())?
-                .with_execution_providers([DirectML::default().build()])
-                .map_err(|e| e.to_string())?
-                .commit_from_file(&path)
-                .map_err(|e| format!("DirectMLセッションを作れません: {e}"))?;
-            Ok(OrtDirectMlBackend { session: Mutex::new(session) })
+            locate_runtime()?;
+            let mut builder = Session::builder().map_err(|e| e.to_string())?.with_optimization_level(GraphOptimizationLevel::Level3).map_err(|e| e.to_string())?;
+            if gpu {
+                #[cfg(windows)]
+                {
+                    builder = builder.with_execution_providers([DirectML::default().build()]).map_err(|e| e.to_string())?;
+                }
+                #[cfg(not(windows))]
+                return Err("DirectMLはWindowsのみです".into());
+            }
+            let session = builder.commit_from_file(&path).map_err(|e| format!("{}セッションを作れません: {e}", if gpu { "DirectML" } else { "onnxruntime(CPU)" }))?;
+            Ok(OrtBackend { gpu, session: Mutex::new(session) })
         }
     }
 
-    impl super::UpmixBackend for OrtDirectMlBackend {
+    impl super::UpmixBackend for OrtBackend {
         fn label(&self) -> &'static str {
-            "GPU(DirectML)"
+            if self.gpu { "GPU(DirectML)" } else { "CPU(onnxruntime)" }
         }
 
         fn run_chunk(&self, left: &[f32], right: &[f32]) -> Result<[[Vec<f32>; 2]; 4], String> {
@@ -214,7 +248,7 @@ mod gpu {
             data[CHUNK_SAMPLES..].copy_from_slice(right);
             let input = Tensor::from_array(([1usize, 2, CHUNK_SAMPLES], data)).map_err(|e| e.to_string())?;
             let mut session = self.session.lock().map_err(|e| e.to_string())?;
-            let outputs = session.run(ort::inputs!["mix" => input]).map_err(|e| format!("GPU推論に失敗しました: {e}"))?;
+            let outputs = session.run(ort::inputs!["mix" => input]).map_err(|e| format!("推論に失敗しました: {e}"))?;
             let (shape, out) = outputs[0].try_extract_tensor::<f32>().map_err(|e| e.to_string())?;
             let dims: Vec<usize> = shape.iter().map(|&d| d as usize).collect();
             let stride_s = dims[2] * dims[3];
@@ -322,11 +356,31 @@ mod tests {
         eprintln!("CPU(tract): load {cpu_load:?} run {cpu_run:?}");
 
         let t = std::time::Instant::now();
-        let gpu = match gpu::OrtDirectMlBackend::load() {
+        let gpu = match gpu::OrtBackend::load(true) {
             Ok(g) => g,
             Err(e) => {
                 // 非力なGPU(VRAM不足等)ではDirectMLの初期化に失敗する。本番ではCPUへフォールバックする設計どおり。
-                eprintln!("GPU(DirectML)を使えないためCPUのみ測定しました: {e}");
+                eprintln!("GPU(DirectML)を使えません。onnxruntime(CPU)で測定します: {e}");
+                let t = std::time::Instant::now();
+                let oc = gpu::OrtBackend::load(false).expect("onnxruntime cpu load");
+                let ort_load = t.elapsed();
+                let t = std::time::Instant::now();
+                let o = oc.run_chunk(&left, &right).expect("ort cpu run");
+                let ort_run = t.elapsed();
+                let (mut md, mut ma, mut de, mut se) = (0f32, 0f32, 0f64, 0f64);
+                for s in 0..4 {
+                    for ch in 0..2 {
+                        for (a, b) in c[s][ch].iter().zip(&o[s][ch]) {
+                            md = md.max((a - b).abs());
+                            ma = ma.max(a.abs());
+                            de += ((a - b) as f64).powi(2);
+                            se += (*a as f64).powi(2);
+                        }
+                    }
+                }
+                let rel_rms = (de / se.max(1e-12)).sqrt();
+                eprintln!("ORT CPU: load {ort_load:?} run {ort_run:?} / tractとの最大差 {md:.6} (最大振幅 {ma:.4})、相対RMS誤差 {rel_rms:.5}");
+                assert!(rel_rms < 0.05, "onnxruntime(CPU)とtractの出力が大きく違う(相対RMS誤差 {rel_rms})");
                 return;
             }
         };
