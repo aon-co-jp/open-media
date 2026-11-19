@@ -1,5 +1,12 @@
 # open-media
 
+<!-- status-2026-11-19 -->
+## いまの状態(2026-11-19、やさしく)
+
+- **v0.1.11 を公開しました。** Windows・Mac・Linux 用のインストーラーが入っています。
+- **AI サラウンドが速くなりました。** 動く順番は「GPU → onnxruntime(CPU)→ tract」です。onnxruntime は、つまずいたときの中継ぎで、tract より約5.6倍速く、答えもほぼ同じです。Windows のインストーラーには onnxruntime を入れてあり、中身を開いて確かめました。
+- **まだ直っていないこと**: ① Windows ARM64 版(ffmpeg を取ってくる手順が足りない)、② Android の APK(原因を調べ中)、③ GPU でこのモデルが動かない理由(わからないまま)。
+
 **日本語** | [English](README.en.md)
 
 <!-- plain-language-2026-11-19 -->

@@ -1,5 +1,12 @@
 # open-media: moving to another PC, and per-OS status
 
+<!-- status-2026-11-19 -->
+## Where things stand (2026-11-19, in plain words)
+
+- **v0.1.11 is out.** It has installers for Windows, Mac and Linux.
+- **AI surround got faster.** The order it tries is "GPU, then onnxruntime (CPU), then tract". onnxruntime is the stepping stone when the GPU fails. It is about 5.6 times faster than tract and gives almost the same answers. The Windows installer includes onnxruntime, and we opened it to check.
+- **Not fixed yet**: (1) the Windows ARM64 build (the step that fetches ffmpeg is missing for it); (2) the Android APK (we are still looking for the cause); (3) why this model will not run on the GPU (we still do not know).
+
 <!-- plain-language-2026-11-19 -->
 ## In plain words (how to move and resume)
 
