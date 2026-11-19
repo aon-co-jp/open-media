@@ -2,6 +2,22 @@
 
 [日本語](README.md) | **English**
 
+<!-- plain-language-2026-11-19 -->
+## In plain words (for everyone, kids too)
+
+**open-media is a toolbox for enjoying music and movies with clean sound and sharp pictures.**
+
+- **Make and convert discs**: write data to CDs, DVDs and Blu-rays (the shiny discs), or turn music and videos into other formats (for example MP3 or MP4).
+- **A player**: plays music CDs and video files as close to the original as it can. It also has "exclusive mode" (the app talks to your sound device directly so nothing else changes the sound) and "upsampling" (making the sound finer).
+- **AI 5.1 surround**: an AI splits an ordinary stereo song (left and right) into drums, bass, voice and everything else, then rebuilds it as 5.1-channel sound that surrounds you.
+- **Just install it**: download it, install it, and use it. Your files are not sent anywhere; this feature runs only on your own computer.
+
+**An honest note**: AI surround is still an experiment. Right now it is calculated on the CPU (your computer's general brain), so one song takes a while. Using the GPU (the brain made for pictures) sometimes does not work, and we are still checking why.
+
+### Key points for experts
+- AI upmix uses HT-Demucs (ONNX). Backend order: **GPU (DirectML) -> onnxruntime (CPU) -> pure-Rust tract**. onnxruntime (CPU) is about 5.6x faster than tract and its output agrees to a relative RMS error of 0.19% (measured on the real model, 2026-11-19).
+- onnxruntime is located at run time (`ORT_DYLIB_PATH` -> `onnxruntime/` next to the exe -> next to the exe -> the plugin folder). If it is missing, tract is used. The Windows x64 installer bundles it.
+
 **open-media = [make-disk](https://github.com/aon-co-jp/make-disk) + [open-bar](https://github.com/aon-co-jp/open-bar)**
 
 One app that combines disc burning, audio/video conversion and ISO creation (make-disk) with a high-quality audio/video player (open-bar). It targets Windows, macOS, Linux and Android (phones and tablets) from a single codebase (Rust + Tauri).

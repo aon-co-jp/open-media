@@ -1,5 +1,17 @@
 # open-media: moving to another PC, and per-OS status
 
+<!-- plain-language-2026-11-19 -->
+## In plain words (how to move and resume)
+
+**The shortest steps for continuing on another computer or account.**
+
+1. Get the repository (`git clone https://github.com/aon-co-jp/open-media`).
+2. Install Rust (`cargo`) and Node.js. On Windows you also need WebView2 (usually already there).
+3. To try AI surround, prepare the model yourself (it is big, so nothing is downloaded behind your back). Prepare it with `tract-onnx-patch` and put it in `MAKE_DISK_DEMUCS_MODEL_DIR`.
+4. Continue from the "Resume message" further down this file.
+
+**What is still open (simply)**: (1) find out again why the model does not run on the GPU (DirectML); (2) check that onnxruntime is inside the installer (after the v0.1.11 release); (3) real DVD/Blu-ray discs; (4) real macOS and Android TV devices.
+
 **Languages**: [日本語](PORTING.md) (authoritative) | English (this page)
 See also: [`CLAUDE.en.md`](CLAUDE.en.md) (development rules) / [`README.en.md`](README.en.md)
 

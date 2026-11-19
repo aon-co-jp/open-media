@@ -1,5 +1,20 @@
 # 開発方針＆開発環境ルール(open-media)
 
+<!-- plain-language-2026-11-19 -->
+## やさしい説明(次に作業する人・AI へ)
+
+**このリポジトリは「make-disk(ディスクの道具)」と「open-bar(プレーヤー)」を1つにしたものです。** 迷ったら、まず README の「やさしい説明」を読んでください。
+
+守ってほしいこと(やさしく言うと):
+1. **「動いた」と言う前に、本物で確かめる。** CI(自動テスト)が通っただけでは「動いた」とは言えません。実際の機械・実際のデータで確かめてから報告します。
+2. **わからないことは「わからない」と書く。** たとえば GPU が動かない理由は、まだ決めつけられません(2026-11-19 時点)。推測は推測と書きます。
+3. **日本語を含むファイルを PowerShell で書き換えない。** 文字が壊れます。Python(UTF-8)か、エディタ用ツールを使います。
+4. **push やタグ(公開)は、決められた手順で。** バージョンは `package.json`・`tauri.conf.json`・`Cargo.toml` をそろえ、`scripts/sync-doc-versions.sh` で README も合わせます。
+
+### 専門家向けの要点
+- 実機テスト(`gpu_matches_cpu_on_real_model`)は `-- --ignored --nocapture`。モデルは `tract-onnx-patch` でパッチして `MAKE_DISK_DEMUCS_MODEL_DIR` に置く。
+- onnxruntime の同梱は `scripts/fetch-onnxruntime.sh`(Windows x64 のみ)と `tauri.windows.conf.json` の `resources`。
+
 **言語 / Languages**: 日本語(このページ・正本) | [English](CLAUDE.en.md)
 関連: [`PORTING.md`](PORTING.md)(引っ越し・OS別の状況) / [`README.md`](README.md)
 make-disk 時代の詳細な開発記録(エンジンの設計・AI機能・過去の不具合)は [`docs/make-disk-legacy/`](docs/make-disk-legacy/) に残してある。

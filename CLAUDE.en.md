@@ -1,5 +1,20 @@
 # Development policy & environment rules (open-media)
 
+<!-- plain-language-2026-11-19 -->
+## In plain words (for the next person or AI)
+
+**This repository joins "make-disk" (disc tools) and "open-bar" (the player) into one.** If you are lost, read the "In plain words" section of the README first.
+
+Please keep these rules (said simply):
+1. **Before saying "it works", test it for real.** Passing CI (automatic tests) is not proof. Check on a real machine with real data, then report.
+2. **Write "I do not know" when you do not know.** For example, the reason the GPU does not work is not settled yet (as of 2026-11-19). Mark guesses as guesses.
+3. **Do not edit files containing Japanese with PowerShell.** It garbles the text. Use Python (UTF-8) or the editor tools.
+4. **Publish (push and tag) by the agreed steps.** Keep the version equal in `package.json`, `tauri.conf.json` and `Cargo.toml`, and run `scripts/sync-doc-versions.sh` so the README matches.
+
+### Key points for experts
+- The real-machine test (`gpu_matches_cpu_on_real_model`) runs with `-- --ignored --nocapture`. Patch the model with `tract-onnx-patch` and put it in `MAKE_DISK_DEMUCS_MODEL_DIR`.
+- onnxruntime is bundled by `scripts/fetch-onnxruntime.sh` (Windows x64 only) and `resources` in `tauri.windows.conf.json`.
+
 **Languages**: [日本語](CLAUDE.md) (authoritative) | English (this page)
 See also: [`PORTING.en.md`](PORTING.en.md) (moving to another PC, per-OS status) / [`README.en.md`](README.en.md)
 Detailed make-disk-era records (engine design, AI features, past bugs) are kept in [`docs/make-disk-legacy/`](docs/make-disk-legacy/).

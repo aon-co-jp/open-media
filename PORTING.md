@@ -1,5 +1,17 @@
 # open-media: 引っ越しガイドとOS別の状況
 
+<!-- plain-language-2026-11-19 -->
+## やさしい説明(引っ越し・再開のしかた)
+
+**別のパソコンやアカウントで続きをするときの、いちばん短い手順です。**
+
+1. リポジトリを取ってくる(`git clone https://github.com/aon-co-jp/open-media`)。
+2. Rust(`cargo`)と Node.js を入れる。Windows ではさらに WebView2 が必要です(たいてい最初から入っています)。
+3. AI サラウンドを試すなら、モデルを自分で用意します(大きいので、勝手にはダウンロードしません)。`tract-onnx-patch` で整えて `MAKE_DISK_DEMUCS_MODEL_DIR` に置きます。
+4. 続きの作業は、このファイルの下の「再開用メッセージ」から読みます。
+
+**いまの未了(やさしく)**: ① GPU(DirectML)でモデルが動かない原因の調べ直し、② インストーラーに onnxruntime が入ったかの確認(v0.1.11 のリリース後)、③ DVD/Blu-ray の実ディスク確認、④ macOS・Android TV の実機確認。
+
 **言語 / Languages**: 日本語(このページ・正本) | [English](PORTING.en.md)
 関連: [`CLAUDE.md`](CLAUDE.md)(開発ルール) / [`README.md`](README.md)
 
