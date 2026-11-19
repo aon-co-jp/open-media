@@ -98,6 +98,12 @@ jobs:
         shell: bash
         run: bash scripts/fetch-poppler-sidecars.sh
 
+      # AIアップミックス高速化用のonnxruntime(DirectML対応、Windows x64のみ)。無くても純Rustのtractで動く(遅いだけ)。
+      - name: fetch onnxruntime
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: bash scripts/fetch-onnxruntime.sh
+
       # 2026-09-16追加: 姉妹Rustリスペクト版(rs-FFmpeg/rs-xorriso、MIT
       # ライセンス)を隣にcloneしてソースからビルドし、sidecarとして
       # 追加同梱する(ユーザー指示「作成したRust版も同梱して」への対応)。

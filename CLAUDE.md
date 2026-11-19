@@ -223,14 +223,14 @@ READMEの「現状」・本書・`PORTING.md` は、機能や確認が変わる�
 **日本語**: 実モデル(HT-Demucs、StemSplitio配布、`tract-onnx-patch`でパッチ→.onnx約148MB+外部データ約2GB)で、`cargo test --release --lib gpu_matches_cpu -- --ignored --nocapture`(`MAKE_DISK_DEMUCS_MODEL_DIR`と、DirectML対応`onnxruntime.dll`を指す`ORT_DYLIB_PATH`が必要)を実行した。
 - **CPU(tract、最適化ビルド)**: モデル読み込み58.6秒、7.8秒ぶんの1チャンクが15.0秒(実時間の約2倍)。出力は有音。
 - **onnxruntime CPU(Python、参考)**: 同じチャンクが約2.9秒(tractの約5倍速い)。
-- **GPU(DirectML)**: このPC(GeForce GT 730 2GB)では、元モデル・パッチ済みモデルとも、最適化レベルやデバイス指定を変えても初期化が`80070057`で失敗する(Pythonのonnxruntime-directmlでも同じ)。**GPUでの推論と、GPU/CPUの出力一致は未検証**(十分なVRAMのGPUが要る)。失敗時にCPU(tract)へ落ちる動作は確認できた。
+- **GPU(DirectML)**: このPC(GeForce GT 730 2GB)では、元モデル・パッチ済みモデルとも、最適化レベルやデバイス指定を変えても初期化が`80070057`で失敗する(Pythonのonnxruntime-directmlでも同じ)。**GPUでの推論と、GPU/CPUの出力一致は未検証**。原因はVRAM不足と断定できない: 同じGPUで小さなモデル(MatMul・int64のGather)はDirectMLで動くので、このモデルのグラフ固有の問題(onnxruntimeのissue #27118では、Transformer系でint64のGather/ScatterNDがあると同じ`80070057`になり、CPUでは動くと報告)の可能性がある。失敗時にCPU(tract)へ落ちる動作は確認できた。
 - **次の判断**: tractは遅い。onnxruntime(CPU)を中間のフォールバックにすれば約5倍速いが、`onnxruntime.dll`(約21MB)を同梱する必要がある(配布サイズと純Rustの方針とのトレードオフ)。
 - モデルの置き場は`F:\open-media\_model`(gitの対象外、約5GB)。
 
 **English**: Ran `cargo test --release --lib gpu_matches_cpu -- --ignored --nocapture` on the real HT-Demucs (patched with `tract-onnx-patch`; ~148 MB .onnx + ~2 GB external data), with `MAKE_DISK_DEMUCS_MODEL_DIR` and `ORT_DYLIB_PATH` pointing at a DirectML-enabled `onnxruntime.dll`.
 - **CPU (tract, release build)**: model load 58.6 s; one 7.8 s chunk takes 15.0 s (about 2x slower than real time); output is non-silent.
 - **onnxruntime CPU (Python, for reference)**: the same chunk takes ~2.9 s (about 5x faster than tract).
-- **GPU (DirectML)**: on this PC (GeForce GT 730, 2 GB) initialization fails with `80070057` for both the original and the patched model regardless of optimization level or device id (same with Python onnxruntime-directml). **GPU inference and GPU/CPU output agreement are unverified** (a GPU with enough VRAM is needed). The fallback to CPU (tract) on failure was confirmed.
+- **GPU (DirectML)**: on this PC (GeForce GT 730, 2 GB) initialization fails with `80070057` for both the original and the patched model regardless of optimization level or device id (same with Python onnxruntime-directml). **GPU inference and GPU/CPU output agreement are unverified**; the cause is not necessarily VRAM: on the same GPU small models (MatMul, int64 Gather) run on DirectML, so it may be specific to this model's graph (onnxruntime issue #27118 reports the same `80070057` for Transformer models with int64 Gather/ScatterND, working on CPU) . The fallback to CPU (tract) on failure was confirmed.
 - **Decision pending**: tract is slow. Using onnxruntime (CPU) as an intermediate fallback would be ~5x faster but requires shipping `onnxruntime.dll` (~21 MB), a trade-off against download size and the pure-Rust policy.
 - The model lives in `F:\open-media\_model` (untracked, ~5 GB).
 

@@ -203,6 +203,7 @@ mod gpu {
         let name = if cfg!(windows) { "onnxruntime.dll" } else if cfg!(target_os = "macos") { "libonnxruntime.dylib" } else { "libonnxruntime.so" };
         let mut dirs: Vec<std::path::PathBuf> = Vec::new();
         if let Some(d) = std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.to_path_buf())) {
+            dirs.push(d.join("onnxruntime")); // インストーラーが同梱する場所(Windows)
             dirs.push(d);
         }
         if let Some(d) = crate::engine::plugins::plugin_dir() {
