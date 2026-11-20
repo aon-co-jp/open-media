@@ -1,0 +1,92 @@
+# 最新の .md(README・CLAUDE・PORTING・POLICY など、最上位の *.md すべて)を、
+# ソースの版やタグとは別に、いつも `docs` ブランチの一番上の階層へ写す。
+# 書き込みが無い回でも毎週1回走り、リリース公開・手動実行でも走る。
+# Mirrors every top-level *.md into the `docs` branch root, always latest,
+# independent of source versions and tags. Also runs weekly even without edits.
+name: docs-latest
+on:
+  push:
+    branches: [main, master]
+  release:
+    types: [published]
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: docs-latest
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Collect top-level markdown
+        run: |
+          mkdir -p "$RUNNER_TEMP/docs"
+          shopt -s nullglob nocaseglob
+          n=0
+          for f in *.md; do cp "$f" "$RUNNER_TEMP/docs/"; n=$((n+1)); done
+          echo "found $n markdown file(s)"
+          [ "$n" -gt 0 ] || echo "::warning::no top-level .md found"
+          for f in "$RUNNER_TEMP"/docs/*.md; do
+            [ -s "$f" ] || echo "::warning::$(basename "$f") is empty"
+            iconv -f UTF-8 -t UTF-8 "$f" >/dev/null 2>&1 || echo "::warning::$(basename "$f") is not valid UTF-8"
+          done
+          printf 'source: %s\ncommit: %s\nupdated: %s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$(date -u +%FT%TZ)" > "$RUNNER_TEMP/docs/.docs-source.txt"
+      - name: List latest installers for every OS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 最新リリース(下書き・先行版を除く)の添付を、OSごとに INSTALLERS.md へ並べる。ソースの版とは別。
+          # Lists the newest stable release's assets per OS in INSTALLERS.md, apart from source versions.
+          out="$RUNNER_TEMP/docs/INSTALLERS.md"
+          rel=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" 2>/dev/null || true)
+          {
+            echo "# Latest installers / 最新のインストーラー"
+            echo
+            if [ -z "$rel" ] || [ "$(echo "$rel" | jq -r '.tag_name // empty')" = "" ]; then
+              echo "No release yet. / まだリリースはありません。"
+            else
+              echo "Version / 版: \`$(echo "$rel" | jq -r .tag_name)\` ($(echo "$rel" | jq -r '.published_at[:10]')) - $(echo "$rel" | jq -r .html_url)"
+              echo
+              for os in "Windows|exe msi" "macOS|dmg pkg" "Linux|deb rpm AppImage appimage tar.gz tgz" "Android|apk aab" "iOS|ipa" "Other / その他|zip"; do
+                name="${os%%|*}"; exts="${os#*|}"
+                rows=""
+                for e in $exts; do
+                  rows="$rows$(echo "$rel" | jq -r --arg e ".$e" '.assets[] | select(.name|ascii_downcase|endswith($e)) | "| [\(.name)](\(.browser_download_url)) | \(.size/1048576*10|floor/10) MB | \((.digest // "-")|sub("^sha256:";"")) |"')"$'\n'
+                done
+                rows=$(printf '%s' "$rows" | sed '/^$/d' | sort -u)
+                if [ -n "$rows" ]; then
+                  echo "## $name"; echo
+                  echo "| File | Size | SHA-256 |"; echo "|---|---|---|"
+                  echo "$rows"; echo
+                fi
+              done
+              echo "_Unsigned builds may show an OS warning. / 署名のないものは、OSが警告を出すことがあります。_"
+            fi
+          } > "$out"
+          cat "$out" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish to docs branch
+        run: |
+          git config user.name "docs-latest[bot]"
+          git config user.email "docs-latest@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin docs >/dev/null 2>&1; then
+            git fetch --depth 1 origin docs
+            git checkout -B docs FETCH_HEAD
+          else
+            git checkout --orphan docs
+          fi
+          git rm -rfq . 2>/dev/null || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$RUNNER_TEMP"/docs/. .
+          git add -A
+          # 日時だけの差では新しいコミットを作らない / skip commits that differ only by the timestamp
+          if git diff --cached --quiet -- . ':!.docs-source.txt'; then
+            echo "no content change"; exit 0
+          fi
+          git commit -qm "docs: sync top-level markdown from ${GITHUB_SHA::7}"
+          git push origin docs
