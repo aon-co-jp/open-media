@@ -1,6 +1,6 @@
 # 最新の .md(README・CLAUDE・PORTING・POLICY など、最上位の *.md すべて)を、
 # ソースの版やタグとは別に、いつも `docs` ブランチの一番上の階層へ写す。
-# 書き込みが無い日でも毎日3回(日本時間の朝7時・昼12時・夜21時ごろ)走り、リリース公開・手動実行でも走る。
+# 書き込みが無い日でも毎日3回(日本時間の朝10時・昼12時・夜22時ごろ)走り、リリース公開・手動実行でも走る。
 # Mirrors every top-level *.md into the `docs` branch root, always latest,
 # independent of source versions and tags. Also runs weekly even without edits.
 name: docs-latest
@@ -10,7 +10,7 @@ on:
   release:
     types: [published]
   schedule:
-    - cron: '7 22,3,12 * * *'
+    - cron: '7 1,3,13 * * *'
   workflow_dispatch:
 permissions:
   contents: write
