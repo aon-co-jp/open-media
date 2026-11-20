@@ -1,0 +1,92 @@
+# open-media
+
+<!-- status-2026-11-19 -->
+## Where things stand (2026-11-19, in plain words)
+
+- **v0.1.11 is out.** It has installers for Windows, Mac and Linux.
+- **AI surround got faster.** The order it tries is "GPU, then onnxruntime (CPU), then tract". onnxruntime is the stepping stone when the GPU fails. It is about 5.6 times faster than tract and gives almost the same answers. The Windows installer includes onnxruntime, and we opened it to check.
+- **Not fixed yet**: (1) the Windows ARM64 build (the step that fetches ffmpeg is missing for it); (2) the Android APK (we are still looking for the cause); (3) why this model will not run on the GPU (we still do not know).
+
+[日本語](README.md) | **English**
+
+<!-- plain-language-2026-11-19 -->
+## In plain words (for everyone, kids too)
+
+**open-media is a toolbox for enjoying music and movies with clean sound and sharp pictures.**
+
+- **Make and convert discs**: write data to CDs, DVDs and Blu-rays (the shiny discs), or turn music and videos into other formats (for example MP3 or MP4).
+- **A player**: plays music CDs and video files as close to the original as it can. It also has "exclusive mode" (the app talks to your sound device directly so nothing else changes the sound) and "upsampling" (making the sound finer).
+- **AI 5.1 surround**: an AI splits an ordinary stereo song (left and right) into drums, bass, voice and everything else, then rebuilds it as 5.1-channel sound that surrounds you.
+- **Just install it**: download it, install it, and use it. Your files are not sent anywhere; this feature runs only on your own computer.
+
+**An honest note**: AI surround is still an experiment. Right now it is calculated on the CPU (your computer's general brain), so one song takes a while. Using the GPU (the brain made for pictures) sometimes does not work, and we are still checking why.
+
+### Key points for experts
+- AI upmix uses HT-Demucs (ONNX). Backend order: **GPU (DirectML) -> onnxruntime (CPU) -> pure-Rust tract**. onnxruntime (CPU) is about 5.6x faster than tract and its output agrees to a relative RMS error of 0.19% (measured on the real model, 2026-11-19).
+- onnxruntime is located at run time (`ORT_DYLIB_PATH` -> `onnxruntime/` next to the exe -> next to the exe -> the plugin folder). If it is missing, tract is used. The Windows x64 installer bundles it.
+
+**open-media = [make-disk](https://github.com/aon-co-jp/make-disk) + [open-bar](https://github.com/aon-co-jp/open-bar)**
+
+One app that combines disc burning, audio/video conversion and ISO creation (make-disk) with a high-quality audio/video player (open-bar). It targets Windows, macOS, Linux and Android (phones and tablets) from a single codebase (Rust + Tauri).
+
+> make-disk stays at its final release. Development continues here in open-media.
+
+## Download
+
+Latest release: <https://github.com/aon-co-jp/open-media/releases/latest>
+
+- Introduction and downloads (always the latest): <https://easy-web.tokyo/open-media/>
+- **Web demo** (try the screen in your browser; simulated, no sound, no files touched): <https://easy-web.tokyo/open-media/demo/>
+
+| Platform | File |
+|---|---|
+| Windows | `open-media_0.1.10_x64-setup.exe` / `.msi` |
+| macOS (Apple Silicon / Intel) | `open-media_0.1.10_aarch64.dmg` / `open-media_0.1.10_x64.dmg` |
+| Linux | `.deb` / `.rpm` / `.AppImage` |
+| Android (phones and tablets) | `open-media_0.1.10_android-universal.apk` (unsigned, sideload) |
+
+## Features
+
+### From make-disk (convert and burn)
+- Burn CD / DVD / Blu-ray, write ISO images, rip audio CDs
+- Convert audio and video, automatic bitrate fitting, range cutting
+- AI noise reduction, AI bandwidth extension, AI super-resolution, frame interpolation, surround conversion, PDF spread conversion
+
+### From open-bar (playback) — "0. Disc player"
+- **Hybrid playback**: audio (CD, audio files, DSD) plays through the open-bar engine; video (DVD / Blu-ray / movies) plays in the on-screen video player.
+- **Playback modes**: E exclusive mode with high-quality upsampling (default; CD to 352.8 kHz, 192 kHz to 384 kHz; falls back to shared mode if the device refuses) / B shared mode with upsampling / A exclusive mode, bit-perfect / D DoP (DSD as-is to the DAC; DoP-capable DACs only).
+- **32-bit output (default)**; devices that refuse it fall back to 24-bit (internal processing is f32, so real resolution stops at 24-bit).
+- **Video upconversion**: DVD / MP4 / MKV are enlarged to Full HD / 4K while playing (lanczos interpolation, not AI super-resolution). Audio is extracted and played with upsampling.
+- **Treble restoration** (for MP3), pause, seek, volume, live mode switching.
+- **Disc items are chosen with radio buttons.** Several tracks or titles can never play at the same time.
+- **Video + separate audio combos** (for example an MP4 movie with DSD audio). The audio is the master clock and the video follows it; combos can be saved as `.obar.json`.
+- **MQA**: detection only. It is never decoded (use mode A to pass it through to an MQA DAC).
+
+## Status and known limitations (honest disclosure)
+
+- **Audio-CD playback is verified on real hardware** (Windows: track read → exclusive mode + upsampling 44.1→352.8 kHz + 32-bit, zero underruns). **Real DVD / Blu-ray discs are not verified yet** (the conversion step was checked with synthetic data).
+- Copy-protected commercial discs cannot be read (no protection is circumvented).
+- DVD / Blu-ray video cannot be played directly in the browser engine, so it is converted to MP4 first. Long titles take a while.
+- Exclusive mode and DoP are Windows-only. On macOS / Linux / Android playback uses shared mode or the video player. Audio-CD ripping and playback are Windows-only.
+- Verification: Windows install / launch / uninstall, CD playback and the system-audio bridge (DAC: a Loxjie D40 Pro-class device at 384 kHz / 32-bit) checked on real hardware. Linux (Ubuntu on WSL) checked up to install and launch. Android checked on a real device (Android 14) up to MP4 / FLAC playback. macOS is unverified (built by GitHub Actions but never run on hardware).
+- Auto-update: the desktop app checks for updates at startup and updates after you confirm (signed). Versions older than the one that introduced it use a different signing key, so replace those manually. End-to-end update verified on real hardware: an installer build updated itself to the next published release. Earlier versions published before this feature lack the update permission, so replace those manually.
+- License: MIT (dependencies keep their own licenses).
+
+## Build
+
+```
+npm install
+npm run tauri dev      # run in development
+npm run tauri build    # build installers
+```
+
+ffmpeg / ffprobe / xorriso are bundled by CI or taken from PATH. See [CLAUDE.md](CLAUDE.md) and [PORTING.md](PORTING.md) (including the make-disk-era development log).
+
+## Docs and moving to another PC
+
+- [`CLAUDE.en.md`](CLAUDE.en.md) — development rules, layout, how to test, pitfalls found (Japanese: [`CLAUDE.md`](CLAUDE.md))
+- [`PORTING.en.md`](PORTING.en.md) — **Moving to another PC** (tools, carrying keys, verification) and per-OS status (Japanese: [`PORTING.md`](PORTING.md))
+- `scripts/doctor.ps1` — checks that a new PC has the required tools
+- Detailed make-disk-era records: [`docs/make-disk-legacy/`](docs/make-disk-legacy/)
+
+Resuming on another account: see the "Resume message" at the end of [`PORTING.en.md`](PORTING.en.md) and of [`CLAUDE.en.md`](CLAUDE.en.md).
