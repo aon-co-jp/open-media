@@ -192,17 +192,19 @@ fn transcribe_with_aruaru(path: &str, duration: f64, llm: &str) -> Result<Vec<Se
             return Err(format!("音声の取り出しに失敗しました: {}", String::from_utf8_lossy(&pcm.stderr)));
         }
         let body = serde_json::json!({ "pcm_f32_base64": base64_encode(&pcm.stdout), "sample_rate": 16000, "language": "auto" }).to_string();
-        let resp = ureq::post(&format!("{llm}/v1/transcribe"))
-            .set("Content-Type", "application/json")
-            .timeout(std::time::Duration::from_secs(600))
-            .send_string(&body)
+        let mut resp = ureq::post(&format!("{llm}/v1/transcribe"))
+            .header("Content-Type", "application/json")
+            .config()
+            .timeout_global(Some(std::time::Duration::from_secs(600)))
+            .build()
+            .send(body.as_str())
             .map_err(|e| {
                 format!(
                     "字幕が無く、aruaru-llmの書き起こし(/v1/transcribe)にも接続できませんでした({e})。字幕ファイル(.srt)を元ファイルと同じ名前で置くか、aruaru-llmを起動してください。 / \
                      No subtitles and aruaru-llm transcription is unreachable. Put a .srt with the same name next to the file, or start aruaru-llm."
                 )
             })?;
-        let v: serde_json::Value = serde_json::from_str(&resp.into_string().map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+        let v: serde_json::Value = serde_json::from_str(&resp.body_mut().read_to_string().map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
         let text = v["transcript"].as_str().unwrap_or("").trim().to_string();
         if !text.is_empty() {
             segs.push(Segment { start_secs: t, end_secs: t + len, text });
@@ -282,12 +284,14 @@ fn ask_llm_to_pick(llm: &str, request: &str, candidates: &[Candidate]) -> Result
     }
     prompt.push_str("Which number best matches the request?<|im_end|>\n<|im_start|>assistant\n");
     let body = serde_json::json!({ "prompt": prompt, "max_new_tokens": 4 }).to_string();
-    let resp = ureq::post(&format!("{llm}/v1/generate-qwen"))
-        .set("Content-Type", "application/json")
-        .timeout(std::time::Duration::from_secs(120))
-        .send_string(&body)
+    let mut resp = ureq::post(&format!("{llm}/v1/generate-qwen"))
+        .header("Content-Type", "application/json")
+        .config()
+        .timeout_global(Some(std::time::Duration::from_secs(120)))
+        .build()
+        .send(body.as_str())
         .map_err(|e| e.to_string())?;
-    let v: serde_json::Value = serde_json::from_str(&resp.into_string().map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    let v: serde_json::Value = serde_json::from_str(&resp.body_mut().read_to_string().map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
     let text = v["completion"].as_str().or_else(|| v["text"].as_str()).unwrap_or("");
     parse_choice(text, candidates.len()).ok_or_else(|| format!("LLMの答えを読めませんでした: {text:?}"))
 }

@@ -65,9 +65,11 @@ struct RangeReader {
 
 impl RangeReader {
     fn open(url: &str) -> Result<Self, String> {
-        let resp = ureq::get(url).set("Range", "bytes=0-0").call().map_err(|e| format!("RIFEの取得に失敗しました({url}): {e}"))?;
+        let resp = ureq::get(url).header("Range", "bytes=0-0").call().map_err(|e| format!("RIFEの取得に失敗しました({url}): {e}"))?;
         let len = resp
-            .header("Content-Range")
+            .headers()
+            .get("content-range")
+            .and_then(|v| v.to_str().ok())
             .and_then(|v| v.rsplit('/').next())
             .and_then(|v| v.trim().parse::<u64>().ok())
             .ok_or("配布ファイルの大きさを取得できません(Range非対応?)")?;
@@ -76,9 +78,9 @@ impl RangeReader {
 
     fn fetch(&mut self, start: u64, want: u64) -> std::io::Result<()> {
         let end = (start + want.max(64 * 1024)).min(self.len) - 1;
-        let resp = ureq::get(&self.url).set("Range", &format!("bytes={start}-{end}")).call().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+        let mut resp = ureq::get(&self.url).header("Range", format!("bytes={start}-{end}")).call().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
         let mut buf = Vec::with_capacity((end - start + 1) as usize);
-        resp.into_reader().read_to_end(&mut buf)?;
+        resp.body_mut().as_reader().read_to_end(&mut buf)?;
         self.cache_start = start;
         self.cache = buf;
         Ok(())

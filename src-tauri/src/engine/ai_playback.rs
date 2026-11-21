@@ -46,12 +46,14 @@ pub fn decide(path: &str, llm_url: &str) -> Result<RateDecision, String> {
     );
     let body = serde_json::json!({ "prompt": prompt, "max_new_tokens": 4 }).to_string();
     let resp = ureq::post(&format!("{llm}/v1/generate-qwen"))
-        .set("Content-Type", "application/json")
-        .timeout(std::time::Duration::from_secs(20))
-        .send_string(&body);
+        .header("Content-Type", "application/json")
+        .config()
+        .timeout_global(Some(std::time::Duration::from_secs(20)))
+        .build()
+        .send(body.as_str());
     let rate = resp
         .ok()
-        .and_then(|r| r.into_string().ok())
+        .and_then(|mut r| r.body_mut().read_to_string().ok())
         .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
         .and_then(|v| v["completion"].as_str().or_else(|| v["text"].as_str()).and_then(parse_choice));
     // LLMの答えが元レートの整数倍でない場合は規則を優先する(非整数倍は品質が落ちるため)。

@@ -231,8 +231,8 @@ pub fn ensure_models() -> Result<PathBuf, String> {
         }
         let url = format!("{HF_BASE}/{HF_REVISION}/{name}");
         let mut bytes = Vec::new();
-        let resp = ureq::get(&url).call().map_err(|e| format!("音声モデルのダウンロードに失敗しました({url}): {e}"))?;
-        std::io::copy(&mut resp.into_reader(), &mut bytes).map_err(|e| format!("ダウンロードの読み取りに失敗しました: {e}"))?;
+        let mut resp = ureq::get(&url).call().map_err(|e| format!("音声モデルのダウンロードに失敗しました({url}): {e}"))?;
+        std::io::copy(&mut resp.body_mut().as_reader(), &mut bytes).map_err(|e| format!("ダウンロードの読み取りに失敗しました: {e}"))?;
         let tmp = dir.join(format!("{name}.part"));
         std::fs::write(&tmp, &bytes).and_then(|_| std::fs::rename(&tmp, &path)).map_err(|e| format!("モデルの保存に失敗しました: {e}"))?;
     }

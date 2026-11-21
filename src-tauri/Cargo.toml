@@ -40,7 +40,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg"]
 # 同じ理由でAndroid/iOSクロスコンパイルにも問題無い。
 lopdf = "0.47"
 # AI超解像プラグイン(Real-ESRGAN)のオンデマンド取得・展開(2026-09-19新設)。
-ureq = "2"
+ureq = "3"
 # 音声の帯域拡張(LavaSRのONNX推論、純Rust)とFFT(2026-09-19新設)。
 tract-onnx = "0.23"
 rustfft = "6"

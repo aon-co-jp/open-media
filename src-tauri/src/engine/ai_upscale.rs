@@ -172,8 +172,8 @@ pub fn ensure_plugin() -> Result<PathBuf, String> {
     std::fs::create_dir_all(&root).map_err(|e| format!("プラグインフォルダを作成できません: {e}"))?;
 
     let mut bytes: Vec<u8> = Vec::new();
-    let resp = ureq::get(&url).call().map_err(|e| format!("Real-ESRGANのダウンロードに失敗しました({url}): {e}"))?;
-    std::io::copy(&mut resp.into_reader(), &mut bytes).map_err(|e| format!("ダウンロードの読み取りに失敗しました: {e}"))?;
+    let mut resp = ureq::get(&url).call().map_err(|e| format!("Real-ESRGANのダウンロードに失敗しました({url}): {e}"))?;
+    std::io::copy(&mut resp.body_mut().as_reader(), &mut bytes).map_err(|e| format!("ダウンロードの読み取りに失敗しました: {e}"))?;
 
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| format!("ZIPを開けません: {e}"))?;
     for i in 0..zip.len() {
