@@ -1,3 +1,3 @@
 source: aon-co-jp/open-media
-commit: 0d69bf598c10c11a414c5f0c268bd367c2b4e54c
-updated: 2026-11-20T05:18:23Z
+commit: ba891617ff46b7c288179afb33a8e79eb7210116
+updated: 2026-11-24T10:41:53Z
